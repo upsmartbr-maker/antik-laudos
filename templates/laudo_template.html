@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Laudo de Análise de Peça - Casa Antik</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      html, body {
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #FAFAFA !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 210mm;
+      height: 297mm;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background-color: #FAFAFA;
+      color: #2C2C2C;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Borda Elegante Dupla */
+    .page-border {
+      position: absolute;
+      top: 8mm;
+      left: 8mm;
+      right: 8mm;
+      bottom: 8mm;
+      border: 2px solid #8B1E23;
+      outline: 1px solid #D4AF37;
+      outline-offset: -4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Marca d'Água Centralizada */
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 130mm;
+      opacity: 0.04;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Container de Conteúdo */
+    .container {
+      position: relative;
+      z-index: 2;
+      padding: 15mm 15mm 12mm 15mm;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Cabeçalho */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #D4AF37;
+      padding-bottom: 12px;
+    }
+
+    .header-logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      object-fit: cover;
+    }
+
+    .brand-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: #8B1E23;
+      letter-spacing: 1.5px;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .brand-subtitle {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      color: #666;
+      margin: 2px 0 0 0;
+      letter-spacing: 0.5px;
+    }
+
+    .doc-title-block {
+      text-align: right;
+    }
+
+    .doc-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #8B1E23;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0;
+    }
+
+    .doc-number {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      color: #777;
+      margin-top: 3px;
+    }
+
+    /* Seções Principais */
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #8B1E23;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #D4AF37;
+      padding-bottom: 3px;
+      margin-top: 10px;
+      margin-bottom: 8px;
+    }
+
+    /* Layout da Peça e Especificações */
+    .piece-overview {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .piece-image-container {
+      width: 40%;
+      border: 1px solid #DDD;
+      padding: 5px;
+      background-color: #FFF;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .piece-image {
+      width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .piece-image-container.dual-image {
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+      padding: 4px;
+    }
+
+    .sub-image-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-width: 0;
+    }
+
+    .piece-image.dual {
+      width: 100%;
+      max-height: 160px;
+      object-fit: contain;
+    }
+
+    .image-subcaption {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 8px;
+      font-weight: 600;
+      color: #8B1E23;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 3px;
+    }
+
+    .piece-specs {
+      width: 60%;
+    }
+
+    table.specs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+    }
+
+    table.specs-table td {
+      padding: 4px 6px;
+      border-bottom: 1px dashed #E0E0E0;
+    }
+
+    table.specs-table td.label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #555;
+      width: 35%;
+    }
+
+    /* Descrição Texto */
+    .text-box {
+      font-size: 10.5px;
+      line-height: 1.45;
+      color: #333;
+      background-color: #FFF;
+      border: 1px solid #EAEAEA;
+      padding: 8px 10px;
+      border-radius: 2px;
+      text-align: justify;
+    }
+
+    /* Caixas de Prós e Contras */
+    .swot-container {
+      display: flex;
+      gap: 12px;
+      margin-top: 5px;
+    }
+
+    .swot-box {
+      width: 50%;
+      background-color: #FFF;
+      border: 1px solid #EAEAEA;
+      padding: 8px;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .swot-box.pros {
+      border-left: 3px solid #2E7D32;
+    }
+
+    .swot-box.cons {
+      border-left: 3px solid #C62828;
+    }
+
+    .swot-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 10.5px;
+    }
+
+    .swot-box.pros .swot-title { color: #2E7D32; }
+    .swot-box.cons .swot-title { color: #C62828; }
+
+    .swot-box ul {
+      margin: 0;
+      padding-left: 15px;
+    }
+
+    /* Tabela de Precaver / Estimativa */
+    table.pricing-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      margin-top: 5px;
+      background-color: #FFF;
+    }
+
+    table.pricing-table th {
+      background-color: #8B1E23;
+      color: #FFF;
+      padding: 5px;
+      text-align: left;
+      font-size: 9.5px;
+    }
+
+    table.pricing-table td {
+      padding: 5px;
+      border-bottom: 1px solid #EEE;
+    }
+
+    table.pricing-table tr.highlight {
+      background-color: #FFF9E6;
+      font-weight: bold;
+    }
+
+    /* Rodapé / Isenção Legal */
+    footer {
+      border-top: 1px solid #D4AF37;
+      padding-top: 8px;
+      font-size: 8.5px;
+      color: #777;
+      line-height: 1.35;
+      text-align: justify;
+    }
+
+    .disclaimer {
+      margin: 0;
+    }
+
+    .footer-brand {
+      text-align: center;
+      font-weight: bold;
+      color: #8B1E23;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Borda decorativa A4 -->
+  <div class="page-border"></div>
+
+  <!-- Marca d'Água do Logo no Fundo -->
+  <img src="{{ logo_base64 }}" class="watermark" alt="Marca d'água Casa Antik">
+
+  <div class="container">
+    
+    <!-- Cabeçalho -->
+    <header>
+      <div class="header-logo-container">
+        <img src="{{ logo_base64 }}" class="header-logo" alt="Logo Casa Antik">
+        <div>
+          <h1 class="brand-title">Casa Antik</h1>
+          <p class="brand-subtitle">Antiquário & Curadoria de Arte</p>
+        </div>
+      </div>
+      <div class="doc-title-block">
+        <h2 class="doc-title">Laudo Técnico Informativo</h2>
+        <div class="doc-number">Ref: {{ referencia }}</div>
+        <div class="doc-number">Data: {{ data }}</div>
+      </div>
+    </header>
+
+    <!-- Visão Geral do Produto -->
+    <section>
+      <div class="section-title">1. Ficha Técnica do Item</div>
+      <div class="piece-overview">
+        {% if imagem_verso_url %}
+        <div class="piece-image-container dual-image">
+          <div class="sub-image-box">
+            <img src="{{ imagem_url }}" class="piece-image dual" alt="Frente da Peça">
+            <span class="image-subcaption">Frente</span>
+          </div>
+          <div class="sub-image-box">
+            <img src="{{ imagem_verso_url }}" class="piece-image dual" alt="Verso da Peça">
+            <span class="image-subcaption">Verso</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="piece-image-container">
+          <!-- Imagem dinâmica da peça -->
+          <img src="{{ imagem_url }}" class="piece-image" alt="Fotografia da Peça">
+        </div>
+        {% endif %}
+        <div class="piece-specs">
+          <table class="specs-table">
+            <tr>
+              <td class="label">Identificação:</td>
+              <td>{{ identificacao }}</td>
+            </tr>
+            <tr>
+              <td class="label">Técnica:</td>
+              <td>{{ tecnica }}</td>
+            </tr>
+            <tr>
+              <td class="label">Materiais:</td>
+              <td>{{ materiais }}</td>
+            </tr>
+            <tr>
+              <td class="label">Dimensões:</td>
+              <td>{{ dimensoes }}</td>
+            </tr>
+            <tr>
+              <td class="label">Assinatura:</td>
+              <td>{{ assinatura }}</td>
+            </tr>
+            <tr>
+              <td class="label">Datação Estimada:</td>
+              <td>{{ datacao }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Descrição Descritiva e Histórica -->
+    <section>
+      <div class="section-title">2. Descrição & Contexto Histórico</div>
+      <div class="text-box">
+        {{ descricao_contexto }}
+      </div>
+    </section>
+
+    <!-- Prós e Contras -->
+    <section>
+      <div class="section-title">3. Análise Mercadológica (SWOT)</div>
+      <div class="swot-container">
+        <div class="swot-box pros">
+          <div class="swot-title">Pontos Fortes</div>
+          <ul>
+            {% for item in pontos_fortes %}
+            <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="swot-box cons">
+          <div class="swot-title">Pontos de Atenção</div>
+          <ul>
+            {% for item in pontos_atencao %}
+            <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cenário de Valoração -->
+    <section>
+      <div class="section-title">4. Estimativa Preliminar de Mercado</div>
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Cenário de Atribuição de Mercado</th>
+            <th>Faixa Estimada (R$)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in cenarios_precificacao %}
+          <tr {% if loop.index == 2 or loop.last %}class="highlight"{% endif %}>
+            <td>{{ item.cenario }}</td>
+            <td>{{ item.faixa_preco }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Isenção Legal e Rodapé -->
+    <footer>
+      <p class="disclaimer">
+        <b>Aviso Legal:</b> Este documento possui caráter estritamente informativo e de apoio à divulgação comercial, elaborado com base em análise visual por visão computacional e pesquisa comparativa de fontes públicas de mercado. Não constitui laudo pericial presencial, exame de autenticidade ou certificado de procedência formal.
+      </p>
+      <div class="footer-brand">www.antik.com.br — Curadoria e Antiguidades</div>
+    </footer>
+
+  </div>
+
+</body>
+</html>

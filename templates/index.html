@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casa Antik - Análise de Peça & Laudo Técnico</title>
+  
+  <!-- Fontes Premium do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #F7F4EE; /* Creme Suave */
+      --primary: #8B1E23; /* Bordô Nobre */
+      --gold: #D4AF37; /* Dourado */
+      --dark: #2A2A2A; /* Cinza Escuro */
+      --white: #FFFFFF;
+      --shadow-sm: 0 4px 12px rgba(0,0,0,0.03);
+      --shadow-md: 0 12px 24px rgba(0,0,0,0.05);
+      --shadow-lg: 0 20px 40px rgba(0,0,0,0.08);
+      --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(139, 30, 35, 0.03) 0%, transparent 50%);
+      color: var(--dark);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* Header Editorial/Serif */
+    .top-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 50px 20px 20px;
+      text-align: center;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .header-logo-wrapper {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .logo-img {
+      height: 85px;
+      width: auto;
+      filter: drop-shadow(0 4px 10px rgba(139, 30, 35, 0.1));
+      transition: transform 0.3s ease;
+    }
+
+    .logo-img:hover {
+      transform: scale(1.03);
+    }
+
+    .logo-fallback {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 1px;
+    }
+
+    .brand-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.2rem;
+      font-weight: 400;
+      color: var(--primary);
+      margin: 0;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      margin: 12px 0 0 0;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 900px;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+
+    /* Card Sofisticado */
+    .main-card {
+      position: relative;
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      box-shadow: var(--shadow-lg);
+      border-radius: 16px;
+      padding: 45px;
+      width: 100%;
+      max-width: 620px;
+      margin: 30px auto 80px;
+      transition: opacity 0.5s ease, transform 0.5s ease, max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .main-card.dual-mode {
+      max-width: 760px;
+    }
+
+    .card-decorator {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--gold);
+      pointer-events: none;
+    }
+
+    .card-decorator.top-left {
+      top: 14px;
+      left: 14px;
+      border-right: 0;
+      border-bottom: 0;
+    }
+
+    .card-decorator.top-right {
+      top: 14px;
+      right: 14px;
+      border-left: 0;
+      border-bottom: 0;
+    }
+
+    .card-decorator.bottom-left {
+      bottom: 14px;
+      left: 14px;
+      border-right: 0;
+      border-top: 0;
+    }
+
+    .card-decorator.bottom-right {
+      bottom: 14px;
+      right: 14px;
+      border-left: 0;
+      border-top: 0;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .form-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.1rem;
+      color: var(--primary);
+      margin: 0 0 6px 0;
+      font-weight: 500;
+    }
+
+    .form-subtitle {
+      font-size: 0.85rem;
+      color: #777;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Seletor Visual Frente / Verso */
+    .mode-selector-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .mode-selector {
+      display: inline-flex;
+      background: #EFEBE4;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: 30px;
+      padding: 4px;
+      gap: 4px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .mode-option {
+      cursor: pointer;
+      user-select: none;
+      margin: 0;
+    }
+
+    .mode-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mode-option-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 25px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mode-option input[type="radio"]:checked + .mode-option-pill {
+      background: var(--primary);
+      color: var(--white);
+      box-shadow: 0 4px 12px rgba(139, 30, 35, 0.25);
+    }
+
+    .mode-option:hover input[type="radio"]:not(:checked) + .mode-option-pill {
+      color: var(--primary);
+      background: rgba(139, 30, 35, 0.05);
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    /* Grid para Dropzones Duplos */
+    .dropzones-dual-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+
+    .dropzone-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dropzone-label-tag {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .dropzone.dual-dropzone {
+      height: 230px;
+    }
+
+    @media (max-width: 640px) {
+      .dropzones-dual-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .dropzone.dual-dropzone {
+        height: 220px;
+      }
+    }
+
+    /* Dropzone Drag & Drop Interativo */
+    .dropzone {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      border: 2px dashed rgba(212, 175, 55, 0.4);
+      border-radius: 12px;
+      background-color: rgba(247, 244, 238, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      transition: var(--transition-smooth);
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background-color: rgba(139, 30, 35, 0.02);
+      box-shadow: inset 0 0 12px rgba(139, 30, 35, 0.02);
+    }
+
+    .file-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .file-input.disabled {
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .dropzone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .upload-icon-wrapper {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: rgba(212, 175, 55, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      margin-bottom: 18px;
+      transition: var(--transition-smooth);
+    }
+
+    .dropzone:hover .upload-icon-wrapper, .dropzone.dragover .upload-icon-wrapper {
+      transform: translateY(-4px);
+      background-color: rgba(139, 30, 35, 0.08);
+    }
+
+    .upload-svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .upload-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--dark);
+      margin: 0 0 6px 0;
+    }
+
+    .upload-subtext {
+      font-size: 0.75rem;
+      color: #888;
+      margin: 0;
+    }
+
+    /* Preview Styling */
+    .preview-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #1E1B18; /* Cinza quente escuro editorial */
+      border: 1px solid rgba(212, 175, 55, 0.25); /* Moldura dourada sutil */
+      border-radius: 10px;
+    }
+
+    .preview-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+      z-index: 15;
+    }
+
+    .preview-container:hover .preview-overlay {
+      opacity: 1;
+    }
+
+    .btn-change-photo {
+      background: var(--white);
+      color: var(--primary);
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .btn-change-photo:hover {
+      background-color: #F7F4EE;
+      transform: scale(1.05);
+    }
+
+    /* Botão Primário Estilizado */
+    .btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      padding: 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(139, 30, 35, 0.15);
+      transition: var(--transition-smooth);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #72161A;
+      box-shadow: 0 10px 24px rgba(139, 30, 35, 0.28);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      background: #E5DFD6;
+      color: #7B756C; /* Melhoria de contraste WCAG AA */
+      border: 1px solid rgba(212, 175, 55, 0.2); /* Borda sutil dourada */
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-icon {
+      transition: transform 0.3s ease;
+    }
+
+    .btn-primary:hover:not(:disabled) .btn-icon {
+      transform: scale(1.08);
+    }
+
+    /* Overlay de Análise Imersiva */
+    .analysis-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(18, 15, 14, 0.98);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--white);
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    /* Grid de Visão Computacional */
+    .scan-grid-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image: 
+        linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 1;
+    }
+
+    /* Bounding box flutuante em Background */
+    .cv-bounding-box {
+      position: absolute;
+      border: 1px dashed rgba(212, 175, 55, 0.35);
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(139, 30, 35, 0.03);
+      transition: opacity 0.30s ease, transform 0.30s ease;
+      opacity: 0;
+    }
+
+    .cv-bounding-box.active {
+      opacity: 0.3;
+    }
+
+    .cv-bounding-box.highlighted {
+      opacity: 0.75;
+      border-color: #4E8D6B; /* Verde sálvia/oliva vintage */
+      box-shadow: 0 0 15px rgba(78, 141, 107, 0.25);
+    }
+
+    .cv-icon {
+      width: 44px;
+      height: 44px;
+      color: var(--gold);
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.5));
+    }
+
+    .cv-bounding-box.highlighted .cv-icon {
+      color: #4E8D6B;
+      filter: drop-shadow(0 0 4px rgba(78, 141, 107, 0.6));
+    }
+
+    .cv-label {
+      font-size: 0.62rem;
+      font-family: monospace;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .cv-bounding-box.highlighted .cv-label {
+      color: #4E8D6B;
+    }
+
+    /* Cantos para CV Bounding Box */
+    .cv-bounding-box::before, .cv-bounding-box::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border: 1.5px solid var(--gold);
+    }
+
+    .cv-bounding-box.highlighted::before, .cv-bounding-box.highlighted::after {
+      border-color: #4E8D6B;
+    }
+
+    .cv-bounding-box::before {
+      top: -1.5px;
+      left: -1.5px;
+      border-right: 0;
+      border-bottom: 0;
+    }
+
+    .cv-bounding-box::after {
+      bottom: -1.5px;
+      right: -1.5px;
+      border-left: 0;
+      border-top: 0;
+    }
+
+    /* Bloco Central do Scanner */
+    .overlay-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 580px;
+      width: 90%;
+    }
+
+    .scanner-card {
+      background: rgba(30, 26, 24, 0.75);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.55);
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .scanner-image-wrapper {
+      position: relative;
+      width: 290px;
+      height: 290px;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #111;
+    }
+
+    .scanner-image-wrapper img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* Linha de Scanner Luminosa */
+    .scanner-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      box-shadow: 0 0 14px var(--gold), 0 0 4px var(--gold);
+      animation: scan-loop 2.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes scan-loop {
+      0% { top: 2%; }
+      100% { top: 98%; }
+    }
+
+    /* Cantos Decorativos do Scanner */
+    .scan-corners .corner {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--gold);
+      pointer-events: none;
+    }
+
+    .scan-corners .top-left {
+      top: 14px;
+      left: 14px;
+      border-right: 0;
+      border-bottom: 0;
+    }
+
+    .scan-corners .top-right {
+      top: 14px;
+      right: 14px;
+      border-left: 0;
+      border-bottom: 0;
+    }
+
+    .scan-corners .bottom-left {
+      bottom: 14px;
+      left: 14px;
+      border-right: 0;
+      border-top: 0;
+    }
+
+    .scan-corners .bottom-right {
+      bottom: 14px;
+      right: 14px;
+      border-left: 0;
+      border-top: 0;
+    }
+
+    /* Informações de Análise */
+    .scanner-info {
+      width: 100%;
+      text-align: center;
+    }
+
+    .scanner-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      color: var(--gold);
+      margin: 0 0 15px 0;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* Terminal de Logs em tempo real */
+    .status-terminal {
+      background: rgba(14, 11, 10, 0.96);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 95px;
+      text-align: left;
+      font-family: 'Fira Code', 'Courier New', monospace; /* Fonte monospaçada clássica contemporânea */
+      font-size: 0.78rem;
+      margin-bottom: 25px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.8), 0 0 15px rgba(212, 175, 55, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .terminal-line {
+      margin-bottom: 5px;
+      line-height: 1.45;
+      color: #9E978C;
+    }
+
+    .terminal-line.line-dim {
+      opacity: 0.35;
+    }
+
+    .terminal-line.active {
+      color: var(--gold); /* Dourado luxuoso para o terminal ativo */
+      position: relative;
+      text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+    }
+
+    .terminal-line.active::before {
+      content: '›';
+      margin-right: 8px;
+      font-weight: bold;
+      color: var(--gold);
+    }
+
+    /* Barra de Progresso elegante */
+    .progress-container {
+      width: 100%;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1.15rem;
+      color: var(--white);
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .progress-bar-outer {
+      width: 100%;
+      height: 6px;
+      background-color: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--gold) 100%);
+      border-radius: 10px;
+      transition: width 0.25s cubic-bezier(0.1, 0.8, 0.25, 1);
+    }
+
+    /* Container de Resultados & Iframe */
+    .result-section {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .result-section.show {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Barra Fixa Superior */
+    .action-bar-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(247, 244, 238, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      z-index: 100;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .action-bar {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .action-bar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .action-logo-img {
+      height: 38px;
+      width: auto;
+    }
+
+    .action-brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 14px;
+    }
+
+    .btn-action {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: var(--transition-smooth);
+    }
+
+    .btn-action svg {
+      transition: transform 0.25s ease;
+    }
+
+    .btn-action:hover svg {
+      transform: scale(1.1);
+    }
+
+    .primary-action {
+      background-color: var(--primary);
+      color: var(--white);
+      border: none;
+      box-shadow: 0 4px 12px rgba(139, 30, 35, 0.12);
+    }
+
+    .primary-action:hover {
+      background-color: #72161A;
+      box-shadow: 0 6px 18px rgba(139, 30, 35, 0.22);
+      transform: translateY(-1.5px);
+    }
+
+    .secondary-action {
+      background-color: var(--dark);
+      color: var(--white);
+      border: none;
+    }
+
+    .secondary-action:hover {
+      background-color: #171717;
+      transform: translateY(-1.5px);
+    }
+
+    .outline-action {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid rgba(139, 30, 35, 0.8);
+    }
+
+    .outline-action:hover {
+      background-color: rgba(139, 30, 35, 0.04);
+      transform: translateY(-1.5px);
+    }
+
+    /* Espaçador A4 */
+    .a4-preview-wrapper {
+      margin-top: 85px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 30px 20px 60px;
+    }
+
+    .a4-container {
+      width: 210mm;
+      height: 297mm;
+      background: #FFF;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.1);
+      border: 1px solid #EAEAEA;
+      overflow: hidden;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    iframe#laudoIframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Responsividade */
+    @media (max-width: 840px) {
+      .a4-container {
+        width: 100%;
+        height: 780px;
+      }
+      .action-brand-name {
+        display: none;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .top-header {
+        padding: 30px 20px 10px;
+      }
+      .brand-title {
+        font-size: 2.3rem;
+        letter-spacing: 3px;
+      }
+      .main-card {
+        padding: 30px 20px;
+        margin: 15px auto 40px;
+      }
+      .action-bar {
+        justify-content: center;
+      }
+      .action-bar-brand {
+        display: none;
+      }
+      .action-buttons {
+        width: 100%;
+        justify-content: space-around;
+      }
+      .btn-action {
+        font-size: 0.72rem;
+        padding: 10px 12px;
+      }
+    }
+
+    /* Print layout calibrado para A4 sem elementos extras da página principal */
+    @media print {
+      body {
+        background: transparent !important;
+      }
+      .top-header,
+      .main-card,
+      .action-bar-wrapper,
+      .analysis-overlay {
+        display: none !important;
+      }
+      .result-section {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .a4-preview-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .a4-container {
+        border: none !important;
+        box-shadow: none !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        border-radius: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Editorial -->
+  <header class="top-header">
+    <div class="header-logo-wrapper">
+      <img src="/static/Logo%20Antik.png" alt="Casa Antik" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="logo-fallback" style="display: none;">CA</div>
+    </div>
+    <h1 class="brand-title">Casa Antik</h1>
+    <p class="brand-subtitle">Curadoria, Antiquário & Inteligência Artificial</p>
+  </header>
+
+  <main class="main-container">
+
+    <!-- Card de Upload -->
+    <div id="uploadCard" class="main-card">
+      <div class="card-decorator top-left"></div>
+      <div class="card-decorator top-right"></div>
+      <div class="card-decorator bottom-left"></div>
+      <div class="card-decorator bottom-right"></div>
+
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="form-header">
+          <h2 class="form-title">Nova Análise Visual</h2>
+          <p class="form-subtitle">Faça upload de fotos para identificação visual, cruzamento de leilões e laudo</p>
+        </div>
+
+        <!-- Seletor Visual Frente / Verso -->
+        <div class="mode-selector-wrapper">
+          <div class="mode-selector" role="radiogroup" aria-label="Modo de Captura de Fotos">
+            <label class="mode-option" id="labelModeSingle">
+              <input type="radio" name="photoMode" id="modeSingle" value="single" checked>
+              <span class="mode-option-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Apenas Frente (1 foto)
+              </span>
+            </label>
+            <label class="mode-option" id="labelModeDual">
+              <input type="radio" name="photoMode" id="modeDual" value="dual">
+              <span class="mode-option-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="15" height="15" rx="2"/><path d="M7 2h13a2 2 0 0 1 2 2v13"/><circle cx="7.5" cy="9.5" r="1.5"/><polyline points="17 15 13 11 4 20"/></svg>
+                Frente e Verso (2 fotos)
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Dropzone: Apenas Frente (Opção Padrão) -->
+        <div id="singleModeGroup" class="form-group">
+          <div class="dropzone" id="dropzoneSingle">
+            <input type="file" id="imageInputSingle" name="file" accept="image/*" class="file-input">
+            
+            <div class="dropzone-content" id="dropzoneContentSingle">
+              <div class="upload-icon-wrapper">
+                <svg class="upload-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M3 15v3a3 3 0 003 3h12a3 3 0 003-3v-3M3 9V6a3 3 0 013-3h12a3 3 0 013 3v3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="upload-text">Arraste a foto da peça aqui ou clique para selecionar</p>
+              <p class="upload-subtext">Foto da Peça • Suporta JPG, PNG e WEBP</p>
+            </div>
+
+            <div class="preview-container" id="previewContainerSingle" style="display: none;">
+              <img id="imagePreviewSingle" src="" alt="Preview da peça">
+              <div class="preview-overlay">
+                <button type="button" class="btn-change-photo" id="btnChangePhotoSingle">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                  Substituir Foto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dropzones: Frente e Verso (2 fotos) -->
+        <div id="dualModeGroup" class="dropzones-dual-grid" style="display: none;">
+          <!-- Foto da Frente -->
+          <div class="dropzone-item">
+            <div class="dropzone-label-tag">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+              Foto da Frente
+            </div>
+            <div class="dropzone dual-dropzone" id="dropzoneFrente">
+              <input type="file" id="imageInputFrente" accept="image/*" class="file-input">
+              
+              <div class="dropzone-content" id="dropzoneContentFrente">
+                <div class="upload-icon-wrapper" style="width: 48px; height: 48px; margin-bottom: 12px;">
+                  <svg class="upload-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 22px; height: 22px;">
+                    <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 15v3a3 3 0 003 3h12a3 3 0 003-3v-3M3 9V6a3 3 0 013-3h12a3 3 0 013 3v3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <p class="upload-text" style="font-size: 0.88rem;">Foto da Frente</p>
+                <p class="upload-subtext" style="font-size: 0.72rem;">Clique ou arraste</p>
+              </div>
+
+              <div class="preview-container" id="previewContainerFrente" style="display: none;">
+                <img id="imagePreviewFrente" src="" alt="Preview da Frente">
+                <div class="preview-overlay">
+                  <button type="button" class="btn-change-photo" id="btnChangePhotoFrente" style="padding: 8px 14px; font-size: 0.72rem;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    Trocar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Foto do Verso -->
+          <div class="dropzone-item">
+            <div class="dropzone-label-tag">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>
+              Foto do Verso
+            </div>
+            <div class="dropzone dual-dropzone" id="dropzoneVerso">
+              <input type="file" id="imageInputVerso" accept="image/*" class="file-input">
+              
+              <div class="dropzone-content" id="dropzoneContentVerso">
+                <div class="upload-icon-wrapper" style="width: 48px; height: 48px; margin-bottom: 12px;">
+                  <svg class="upload-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 22px; height: 22px;">
+                    <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 15v3a3 3 0 003 3h12a3 3 0 003-3v-3M3 9V6a3 3 0 013-3h12a3 3 0 013 3v3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <p class="upload-text" style="font-size: 0.88rem;">Foto do Verso</p>
+                <p class="upload-subtext" style="font-size: 0.72rem;">Marcas, selos, desgastes</p>
+              </div>
+
+              <div class="preview-container" id="previewContainerVerso" style="display: none;">
+                <img id="imagePreviewVerso" src="" alt="Preview do Verso">
+                <div class="preview-overlay">
+                  <button type="button" class="btn-change-photo" id="btnChangePhotoVerso" style="padding: 8px 14px; font-size: 0.72rem;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    Trocar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn-primary" disabled>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Analisar Peça
+        </button>
+      </form>
+    </div>
+
+    <!-- Overlay de Análise Imersiva -->
+    <div id="analysisOverlay" class="analysis-overlay" style="display: none;">
+      <!-- Grid de Fundo CV -->
+      <div class="scan-grid-bg" id="scanGridBg"></div>
+
+      <!-- Conteúdo do Overlay -->
+      <div class="overlay-content">
+        <div class="scanner-card">
+          <div class="scanner-image-wrapper">
+            <img id="scannerImage" src="" alt="Peça em análise">
+            <div class="scanner-line"></div>
+            <div class="scan-corners">
+              <div class="corner top-left"></div>
+              <div class="corner top-right"></div>
+              <div class="corner bottom-left"></div>
+              <div class="corner bottom-right"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scanner-info">
+          <h2 class="scanner-heading">Scanner Multiespectral</h2>
+          
+          <!-- Terminal de logs simulados -->
+          <div class="status-terminal">
+            <div class="terminal-line line-dim" id="terminalLine2">...</div>
+            <div class="terminal-line line-dim" id="terminalLine1">...</div>
+            <div class="terminal-line active" id="terminalActiveLine">Carregando motores de curadoria visual...</div>
+          </div>
+
+          <!-- Progresso -->
+          <div class="progress-container">
+            <div class="progress-label">
+              <span id="progressText">0%</span>
+            </div>
+            <div class="progress-bar-outer">
+              <div class="progress-bar-inner" id="progressBarInner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção do Resultado (Laudo A4) -->
+    <div id="resultSection" class="result-section">
+      
+      <!-- Barra fixa de Ações -->
+      <div class="action-bar-wrapper">
+        <div class="action-bar">
+          <div class="action-bar-brand">
+            <img src="/static/Logo%20Antik.png" alt="Logo" class="action-logo-img" onerror="this.style.display='none';">
+            <span class="action-brand-name">Casa Antik</span>
+          </div>
+          <div class="action-buttons">
+            <button id="btnDownloadPDF" class="btn-action primary-action">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Baixar PDF
+            </button>
+            <button id="btnDownloadHTML" class="btn-action secondary-action">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              Baixar HTML
+            </button>
+            <button id="btnNewAnalysis" class="btn-action outline-action">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Nova Análise
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview do Laudo em Iframe -->
+      <div class="a4-preview-wrapper">
+        <div class="a4-container">
+          <iframe id="laudoIframe" title="Laudo Técnico A4 Casa Antik"></iframe>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // Silhuetas e dados simulados para a Visão Computacional de Fundo
+    const silhouettes = [
+      {
+        icon: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="36" r="20" /><path d="M32 16V10M28 10H36M32 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /><path d="M32 36l8-8M32 36v-12" /></svg>`,
+        label: "CLASS: POCKET WATCH<br>EST. AGE: 120Y<br>CONFIDENCE: 98.4%"
+      },
+      {
+        icon: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10h20M24 10v4c0 4-4 8-4 12v6c0 10 6 16 12 16s12-6 12-16v-6c0-4-4-8-4-12v-4" /><path d="M16 26c0-4 4-6 4-6M48 26c0-4-4-6-4-6M32 48v6M20 54h24" /></svg>`,
+        label: "CLASS: CLAY VASE<br>STYLE: BAROQUE<br>MATERIAL: CERAMIC"
+      },
+      {
+        icon: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="12" y="10" width="40" height="44" rx="2" /><rect x="18" y="16" width="28" height="32" /><path d="M22 40l6-6 8 8 4-4 2 2" /><circle cx="26" cy="24" r="3" /></svg>`,
+        label: "CLASS: CANVAS ART<br>STYLE: IMPRESSIONIST<br>ORIGIN: EUROPEAN"
+      },
+      {
+        icon: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12h24v20H20zM20 32h24v4H20zM22 36l-2 20M42 36l2 20M20 44h24M24 12V6c0-2 16-2 16 0v6" /></svg>`,
+        label: "CLASS: ROYAL CHAIR<br>MATERIAL: MAHOGANY<br>ERA: REGENCY"
+      },
+      {
+        icon: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M32 10a10 10 0 0 0-10 10c0 4 2 8 6 10-4 2-8 6-8 12v4h36v-4c0-6-4-10-8-12 4-2 6-6 6-10a10 10 0 0 0-10-10z" /><path d="M26 52v6h12v-6M20 58h24" /></svg>`,
+        label: "CLASS: BUST SCULPTURE<br>MATERIAL: BRONZE<br>CONFIDENCE: 94.1%"
+      },
+      {
+        icon: `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="20" cy="32" r="10" /><circle cx="20" cy="32" r="4" /><path d="M30 32h24M44 32v6M49 32v6M54 32v6" /></svg>`,
+        label: "CLASS: BRASS KEY<br>EST. AGE: 160Y<br>STATUS: AUTHENTIC"
+      }
+    ];
+
+    // Gerenciador de Progresso Fluido & Terminais
+    class SmoothProgress {
+      constructor(barElement, textElement) {
+        this.bar = barElement;
+        this.text = textElement;
+        this.current = 0;
+        this.target = 98; 
+        this.interval = null;
+        this.statuses = [
+          "Inicializando scanner multiespectral visual...",
+          "Processando padrões cromáticos e histograma...",
+          "Identificando marcas de manufatura e assinaturas...",
+          "Varrendo registros históricos da Casa Antik...",
+          "Cruzando bases de leilões (Sotheby's, Christie's)...",
+          "Analisando densidade, pátina e desgaste dos materiais...",
+          "Pesquisando bases de antiquários associados...",
+          "Mapeando estimativas de valorização mercadológica...",
+          "Sintetizando laudo técnico estruturado em PDF A4..."
+        ];
+        this.statusIndex = 0;
+        this.statusTimer = null;
+      }
+
+      start() {
+        this.current = 0;
+        this.target = 98;
+        this.updateUI(0);
+        
+        const tActive = document.getElementById('terminalActiveLine');
+        const tLine1 = document.getElementById('terminalLine1');
+        const tLine2 = document.getElementById('terminalLine2');
+        
+        tLine1.textContent = "...";
+        tLine2.textContent = "...";
+        tActive.textContent = this.statuses[0];
+        
+        // Rotaciona logs a cada 1.4s
+        this.statusIndex = 0;
+        this.statusTimer = setInterval(() => {
+          this.statusIndex = (this.statusIndex + 1) % this.statuses.length;
+          const nextStatus = this.statuses[this.statusIndex];
+          tLine2.textContent = tLine1.textContent;
+          tLine1.textContent = tActive.textContent;
+          tActive.textContent = nextStatus;
+        }, 1400);
+
+        // Progresso suave com desaceleração linear a cúbica
+        const startTime = Date.now();
+        const duration = 12000; // Simula 12s até chegar em 98% se demorar
+        
+        this.interval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Cubic ease-out
+          const ease = 1 - Math.pow(1 - progress, 3);
+          this.current = Math.floor(ease * this.target);
+          
+          this.updateUI(this.current);
+          
+          if (this.current >= this.target) {
+            clearInterval(this.interval);
+          }
+        }, 50);
+      }
+
+      updateUI(value) {
+        this.bar.style.width = value + '%';
+        this.text.textContent = value + '%';
+      }
+
+      complete() {
+        if (this.interval) clearInterval(this.interval);
+        if (this.statusTimer) clearInterval(this.statusTimer);
+        
+        const currentVal = this.current;
+        const diff = 100 - currentVal;
+        let step = 0;
+        
+        const finalInterval = setInterval(() => {
+          step += 1;
+          const val = Math.min(100, currentVal + Math.floor((step / 10) * diff));
+          this.updateUI(val);
+          
+          if (val >= 100) {
+            clearInterval(finalInterval);
+            
+            const tActive = document.getElementById('terminalActiveLine');
+            const tLine1 = document.getElementById('terminalLine1');
+            tActive.textContent = "Laudo Técnico gerado com sucesso! Carregando...";
+          }
+        }, 30);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const uploadCard = document.getElementById('uploadCard');
+      const uploadForm = document.getElementById('uploadForm');
+      
+      const modeSingle = document.getElementById('modeSingle');
+      const modeDual = document.getElementById('modeDual');
+      const singleModeGroup = document.getElementById('singleModeGroup');
+      const dualModeGroup = document.getElementById('dualModeGroup');
+
+      // Dropzone Single
+      const dropzoneSingle = document.getElementById('dropzoneSingle');
+      const imageInputSingle = document.getElementById('imageInputSingle');
+      const dropzoneContentSingle = document.getElementById('dropzoneContentSingle');
+      const previewContainerSingle = document.getElementById('previewContainerSingle');
+      const imagePreviewSingle = document.getElementById('imagePreviewSingle');
+      const btnChangePhotoSingle = document.getElementById('btnChangePhotoSingle');
+
+      // Dropzone Frente
+      const dropzoneFrente = document.getElementById('dropzoneFrente');
+      const imageInputFrente = document.getElementById('imageInputFrente');
+      const dropzoneContentFrente = document.getElementById('dropzoneContentFrente');
+      const previewContainerFrente = document.getElementById('previewContainerFrente');
+      const imagePreviewFrente = document.getElementById('imagePreviewFrente');
+      const btnChangePhotoFrente = document.getElementById('btnChangePhotoFrente');
+
+      // Dropzone Verso
+      const dropzoneVerso = document.getElementById('dropzoneVerso');
+      const imageInputVerso = document.getElementById('imageInputVerso');
+      const dropzoneContentVerso = document.getElementById('dropzoneContentVerso');
+      const previewContainerVerso = document.getElementById('previewContainerVerso');
+      const imagePreviewVerso = document.getElementById('imagePreviewVerso');
+      const btnChangePhotoVerso = document.getElementById('btnChangePhotoVerso');
+      
+      const analysisOverlay = document.getElementById('analysisOverlay');
+      const scannerImage = document.getElementById('scannerImage');
+      const progressBarInner = document.getElementById('progressBarInner');
+      const progressText = document.getElementById('progressText');
+      
+      const resultSection = document.getElementById('resultSection');
+      const laudoIframe = document.getElementById('laudoIframe');
+      
+      const btnSubmit = document.getElementById('btnSubmit');
+      
+      const btnDownloadPDF = document.getElementById('btnDownloadPDF');
+      const btnDownloadHTML = document.getElementById('btnDownloadHTML');
+      const btnNewAnalysis = document.getElementById('btnNewAnalysis');
+
+      const smoothProgress = new SmoothProgress(progressBarInner, progressText);
+      
+      let currentHtmlContent = '';
+      let currentMode = 'single'; // 'single' ou 'dual'
+
+      let fileSingle = null;
+      let dataUrlSingle = '';
+
+      let fileFrente = null;
+      let dataUrlFrente = '';
+
+      let fileVerso = null;
+      let dataUrlVerso = '';
+
+      let cvInterval = null;
+      let scannerFlipInterval = null;
+      const cvBoxes = [];
+
+      // Atualiza validação do formulário e estado do botão de envio
+      function updateSubmitValidation() {
+        if (currentMode === 'single') {
+          btnSubmit.disabled = !fileSingle;
+        } else {
+          // Ambos são obrigatórios em modo Frente e Verso
+          btnSubmit.disabled = !(fileFrente && fileVerso);
+        }
+      }
+
+      // Alternância do modo de foto
+      function setPhotoMode(mode) {
+        currentMode = mode;
+        if (mode === 'single') {
+          uploadCard.classList.remove('dual-mode');
+          singleModeGroup.style.display = 'block';
+          dualModeGroup.style.display = 'none';
+
+          // Se o usuário já selecionou foto da frente no modo dual e não há foto no single, migra
+          if (fileFrente && !fileSingle) {
+            fileSingle = fileFrente;
+            dataUrlSingle = dataUrlFrente;
+            imagePreviewSingle.src = dataUrlSingle;
+            dropzoneContentSingle.style.display = 'none';
+            previewContainerSingle.style.display = 'flex';
+            imageInputSingle.classList.add('disabled');
+          }
+        } else {
+          uploadCard.classList.add('dual-mode');
+          singleModeGroup.style.display = 'none';
+          dualModeGroup.style.display = 'grid';
+
+          // Se o usuário já selecionou foto no modo single e não há frente no dual, migra
+          if (fileSingle && !fileFrente) {
+            fileFrente = fileSingle;
+            dataUrlFrente = dataUrlSingle;
+            imagePreviewFrente.src = dataUrlFrente;
+            dropzoneContentFrente.style.display = 'none';
+            previewContainerFrente.style.display = 'flex';
+            imageInputFrente.classList.add('disabled');
+          }
+        }
+        updateSubmitValidation();
+      }
+
+      modeSingle.addEventListener('change', () => {
+        if (modeSingle.checked) setPhotoMode('single');
+      });
+
+      modeDual.addEventListener('change', () => {
+        if (modeDual.checked) setPhotoMode('dual');
+      });
+
+      // Função utilitária para inicializar dropzone interativo
+      function setupDropzoneInstance({
+        dropzone,
+        input,
+        content,
+        previewContainer,
+        imagePreview,
+        btnChange,
+        onFileLoaded,
+        onFileCleared
+      }) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+          }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+          }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          if (files && files.length) {
+            input.files = files;
+            processFile(files[0]);
+          }
+        });
+
+        input.addEventListener('change', () => {
+          if (input.files && input.files.length) {
+            processFile(input.files[0]);
+          }
+        });
+
+        function processFile(file) {
+          if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione um arquivo de imagem válido (JPG, PNG, WEBP).');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            imagePreview.src = dataUrl;
+            content.style.display = 'none';
+            previewContainer.style.display = 'flex';
+            input.classList.add('disabled');
+            onFileLoaded(file, dataUrl);
+            updateSubmitValidation();
+          };
+          reader.readAsDataURL(file);
+        }
+
+        btnChange.addEventListener('click', (e) => {
+          e.stopPropagation();
+          input.classList.remove('disabled');
+          input.value = '';
+          imagePreview.src = '';
+          previewContainer.style.display = 'none';
+          content.style.display = 'flex';
+          onFileCleared();
+          updateSubmitValidation();
+          input.click();
+        });
+      }
+
+      // Dropzone 1: Peça (Single)
+      setupDropzoneInstance({
+        dropzone: dropzoneSingle,
+        input: imageInputSingle,
+        content: dropzoneContentSingle,
+        previewContainer: previewContainerSingle,
+        imagePreview: imagePreviewSingle,
+        btnChange: btnChangePhotoSingle,
+        onFileLoaded: (file, dataUrl) => {
+          fileSingle = file;
+          dataUrlSingle = dataUrl;
+        },
+        onFileCleared: () => {
+          fileSingle = null;
+          dataUrlSingle = '';
+        }
+      });
+
+      // Dropzone 2: Frente (Dual)
+      setupDropzoneInstance({
+        dropzone: dropzoneFrente,
+        input: imageInputFrente,
+        content: dropzoneContentFrente,
+        previewContainer: previewContainerFrente,
+        imagePreview: imagePreviewFrente,
+        btnChange: btnChangePhotoFrente,
+        onFileLoaded: (file, dataUrl) => {
+          fileFrente = file;
+          dataUrlFrente = dataUrl;
+        },
+        onFileCleared: () => {
+          fileFrente = null;
+          dataUrlFrente = '';
+        }
+      });
+
+      // Dropzone 3: Verso (Dual)
+      setupDropzoneInstance({
+        dropzone: dropzoneVerso,
+        input: imageInputVerso,
+        content: dropzoneContentVerso,
+        previewContainer: previewContainerVerso,
+        imagePreview: imagePreviewVerso,
+        btnChange: btnChangePhotoVerso,
+        onFileLoaded: (file, dataUrl) => {
+          fileVerso = file;
+          dataUrlVerso = dataUrl;
+        },
+        onFileCleared: () => {
+          fileVerso = null;
+          dataUrlVerso = '';
+        }
+      });
+
+      // Carrossel e Grid de Bounding Boxes no Background (Cross-fade 400ms)
+      function startCVBackground() {
+        const container = document.getElementById('scanGridBg');
+        container.innerHTML = '';
+        cvBoxes.length = 0;
+
+        const positions = [
+          { top: '12%', left: '8%' },
+          { top: '14%', right: '8%' },
+          { bottom: '16%', left: '8%' },
+          { bottom: '18%', right: '8%' }
+        ];
+
+        positions.forEach((pos, idx) => {
+          const box = document.createElement('div');
+          box.className = 'cv-bounding-box';
+          if (pos.top) box.style.top = pos.top;
+          if (pos.bottom) box.style.bottom = pos.bottom;
+          if (pos.left) box.style.left = pos.left;
+          if (pos.right) box.style.right = pos.right;
+
+          const item = silhouettes[Math.floor(Math.random() * silhouettes.length)];
+          box.innerHTML = `
+            <div class="cv-icon">${item.icon}</div>
+            <div class="cv-label">${item.label}</div>
+          `;
+          
+          container.appendChild(box);
+          cvBoxes.push(box);
+
+          setTimeout(() => {
+            box.classList.add('active');
+          }, idx * 180);
+        });
+
+        let currentBoxIdx = 0;
+        cvInterval = setInterval(() => {
+          const box = cvBoxes[currentBoxIdx];
+          currentBoxIdx = (currentBoxIdx + 1) % cvBoxes.length;
+
+          box.style.opacity = '0';
+          box.classList.remove('highlighted');
+
+          setTimeout(() => {
+            const item = silhouettes[Math.floor(Math.random() * silhouettes.length)];
+            box.querySelector('.cv-icon').innerHTML = item.icon;
+            box.querySelector('.cv-label').innerHTML = item.label;
+            box.style.opacity = '0.3';
+
+            if (Math.random() > 0.5) {
+              box.classList.add('highlighted');
+              box.style.opacity = '0.75';
+              setTimeout(() => {
+                box.classList.remove('highlighted');
+                box.style.opacity = '0.3';
+              }, 300);
+            }
+          }, 150);
+        }, 400);
+      }
+
+      function stopCVBackground() {
+        if (cvInterval) clearInterval(cvInterval);
+      }
+
+      function startScannerPreview(frontUrl, backUrl) {
+        scannerImage.src = frontUrl;
+        if (backUrl) {
+          let showFront = true;
+          scannerFlipInterval = setInterval(() => {
+            showFront = !showFront;
+            scannerImage.style.opacity = '0.25';
+            setTimeout(() => {
+              scannerImage.src = showFront ? frontUrl : backUrl;
+              scannerImage.style.opacity = '1';
+            }, 200);
+          }, 2400);
+        }
+      }
+
+      function stopScannerPreview() {
+        if (scannerFlipInterval) {
+          clearInterval(scannerFlipInterval);
+          scannerFlipInterval = null;
+        }
+      }
+
+      // Envio do formulário (Análise)
+      uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData();
+
+        if (currentMode === 'single') {
+          if (!fileSingle) {
+            alert('Por favor, selecione a foto da peça.');
+            return;
+          }
+          formData.append('file', fileSingle);
+          startScannerPreview(dataUrlSingle, null);
+        } else {
+          if (!fileFrente || !fileVerso) {
+            alert('Por favor, carregue ambas as fotos (Frente e Verso) para continuar.');
+            return;
+          }
+          formData.append('file', fileFrente);
+          formData.append('file_verso', fileVerso);
+          startScannerPreview(dataUrlFrente, dataUrlVerso);
+        }
+
+        // Oculta formulário e exibe overlay com scanner
+        uploadCard.style.opacity = '0';
+        setTimeout(() => {
+          uploadCard.style.display = 'none';
+          analysisOverlay.style.display = 'flex';
+          startCVBackground();
+          smoothProgress.start();
+        }, 350);
+
+        try {
+          const response = await fetch('/preview-laudo', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error(`Erro de resposta da API (${response.status})`);
+          }
+
+          currentHtmlContent = await response.text();
+          
+          smoothProgress.complete();
+          stopCVBackground();
+          stopScannerPreview();
+
+          // Transição suave para revelar o Laudo Técnico
+          setTimeout(() => {
+            analysisOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+              analysisOverlay.style.display = 'none';
+              analysisOverlay.style.opacity = '1';
+
+              // Exibe seção de resultado
+              resultSection.style.display = 'flex';
+              setTimeout(() => {
+                resultSection.classList.add('show');
+              }, 50);
+
+              // Alimenta o iframe com o laudo renderizado
+              const iframeDoc = laudoIframe.contentDocument || laudoIframe.contentWindow.document;
+              iframeDoc.open();
+              iframeDoc.write(currentHtmlContent);
+              iframeDoc.close();
+
+              resultSection.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+
+          }, 1400);
+
+        } catch (error) {
+          stopCVBackground();
+          stopScannerPreview();
+          alert('Falha ao processar análise técnica: ' + error.message);
+          analysisOverlay.style.display = 'none';
+          uploadCard.style.display = 'block';
+          uploadCard.style.opacity = '1';
+        }
+      });
+
+      // Impressão nativa calibrada do iframe A4 (PDF)
+      btnDownloadPDF.addEventListener('click', () => {
+        if (laudoIframe && laudoIframe.contentWindow) {
+          laudoIframe.contentWindow.focus();
+          laudoIframe.contentWindow.print();
+        } else {
+          alert('Laudo indisponível para conversão em PDF.');
+        }
+      });
+
+      // Download de arquivo HTML estático
+      btnDownloadHTML.addEventListener('click', () => {
+        if (!currentHtmlContent) {
+          alert('Nenhum documento gerado para exportação.');
+        } else {
+          const blob = new Blob([currentHtmlContent], { type: 'text/html;charset=utf-8' });
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          
+          let filename = 'Laudo_Casa_Antik.html';
+          const refMatch = currentHtmlContent.match(/Ref:\s*([^<\n]+)/);
+          if (refMatch && refMatch[1]) {
+            const refClean = refMatch[1].trim().replace(/#/g, '').replace(/[\/\\]/g, '-');
+            filename = `Laudo_${refClean}.html`;
+          }
+
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(downloadUrl);
+        }
+      });
+
+      // Nova Análise - Reseta tudo para estado inicial padrão
+      btnNewAnalysis.addEventListener('click', () => {
+        uploadForm.reset();
+        
+        fileSingle = null;
+        dataUrlSingle = '';
+        fileFrente = null;
+        dataUrlFrente = '';
+        fileVerso = null;
+        dataUrlVerso = '';
+
+        [imageInputSingle, imageInputFrente, imageInputVerso].forEach(input => {
+          if (input) {
+            input.classList.remove('disabled');
+            input.value = '';
+          }
+        });
+
+        [imagePreviewSingle, imagePreviewFrente, imagePreviewVerso].forEach(img => {
+          if (img) img.src = '';
+        });
+
+        [previewContainerSingle, previewContainerFrente, previewContainerVerso].forEach(cnt => {
+          if (cnt) cnt.style.display = 'none';
+        });
+
+        [dropzoneContentSingle, dropzoneContentFrente, dropzoneContentVerso].forEach(cnt => {
+          if (cnt) cnt.style.display = 'flex';
+        });
+
+        scannerImage.src = '';
+        btnSubmit.disabled = true;
+
+        modeSingle.checked = true;
+        setPhotoMode('single');
+
+        resultSection.classList.remove('show');
+        setTimeout(() => {
+          resultSection.style.display = 'none';
+          uploadCard.style.display = 'block';
+          setTimeout(() => {
+            uploadCard.style.opacity = '1';
+          }, 50);
+          
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 600);
+      });
+
+    });
+  </script>
+
+</body>
+</html>
