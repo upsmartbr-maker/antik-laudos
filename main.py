@@ -377,29 +377,53 @@ async def admin_login_action(
     email: str = Form(...),
     password: str = Form(...)
 ):
-    """Autentica o administrador com normalização de espaços e grava o cookie HttpOnly."""
+    """
+    Autentica o administrador (redirecionando para o painel /admin/dashboard)
+    ou usuário cadastrado (redirecionando para o gerador de laudos /).
+    """
     email_limpo = (email or "").strip().lower()
     senha_limpa = (password or "").strip()
 
-    if not auth_service.verify_admin_credentials(email_limpo, senha_limpa):
-        return templates.TemplateResponse(
-            request=request,
-            name="admin_login.html",
-            context={"erro": "E-mail ou senha incorretos."},
-            status_code=401
+    # 1. Se for o administrador principal
+    if auth_service.verify_admin_credentials(email_limpo, senha_limpa):
+        token = auth_service.create_admin_token(email_limpo)
+        response = RedirectResponse(url="/admin/dashboard", status_code=303)
+        response.set_cookie(
+            key=auth_service.COOKIE_NAME,
+            value=token,
+            httponly=True,
+            max_age=auth_service.SESSION_DURATION_SECONDS,
+            samesite="lax",
+            secure=False  # Permite funcionamento tanto em desenvolvimento (HTTP) quanto em produção (HTTPS)
         )
+        return response
 
-    token = auth_service.create_admin_token(email_limpo)
-    response = RedirectResponse(url="/admin/dashboard", status_code=303)
-    response.set_cookie(
-        key=auth_service.COOKIE_NAME,
-        value=token,
-        httponly=True,
-        max_age=auth_service.SESSION_DURATION_SECONDS,
-        samesite="lax",
-        secure=False  # Permite funcionamento tanto em desenvolvimento (HTTP) quanto em produção (HTTPS)
+    # 2. Se for um usuário comum cadastrado acessando pela tela de login
+    sucesso, msg, user_data = await supabase_service.autenticar_usuario_supabase(email_limpo, senha_limpa)
+    if sucesso:
+        user_token = auth_service.create_user_token(
+            email=email_limpo,
+            nome=user_data.get("nome", "") if user_data else ""
+        )
+        response = RedirectResponse(url="/", status_code=303)
+        response.set_cookie(
+            key=auth_service.USER_COOKIE_NAME,
+            value=user_token,
+            httponly=True,
+            max_age=auth_service.SESSION_DURATION_SECONDS,
+            samesite="lax",
+            secure=False
+        )
+        return response
+
+    # 3. Caso não seja admin nem usuário válido (ou expirado)
+    erro_msg = msg if (msg and "expirado" in msg.lower()) else "E-mail ou senha incorretos."
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_login.html",
+        context={"erro": erro_msg},
+        status_code=401
     )
-    return response
 
 
 @app.get("/admin/logout", tags=["Admin"])

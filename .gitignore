@@ -20,3 +20,6 @@ static/uploads/*
 desktop.ini
 Thumbs.db
 .DS_Store
+
+# Armazenamento local de usuários
+usuarios_locais.json

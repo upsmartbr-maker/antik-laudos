@@ -165,6 +165,62 @@ def test_admin_flow():
     assert r_logout.headers.get("location") == "/admin/login"
     print("✓ Logout administrativo efetuado e redirecionado para o login.")
 
+    print("\n=== TESTE 11: Cadastro de Usuário e Login com Credenciais Geradas ===")
+    # 1. Admin cadastra um novo usuário
+    admin_auth_client = TestClient(app)
+    admin_auth_client.post("/admin/login", data={"email": admin_email, "password": admin_pass})
+    
+    r_novo_user = admin_auth_client.post(
+        "/admin/usuarios",
+        json={
+            "nome": "Restaurador Antik",
+            "email": "restaurador@antik.com.br",
+            "tipo_validade": "Dias",
+            "periodo": 30
+        }
+    )
+    assert r_novo_user.status_code == 200, f"Falha ao cadastrar: {r_novo_user.text}"
+    user_cred = r_novo_user.json()
+    user_email = user_cred["email"]
+    user_senha = user_cred["senha"]
+    print(f"✓ Novo usuário cadastrado: {user_email} com senha gerada {user_senha}")
+
+    # 2. Admin faz logout
+    admin_auth_client.get("/admin/logout")
+
+    # 3. Usuário anônimo tenta acessar com senha errada em /admin/login -> deve dar 401
+    user_client = TestClient(app)
+    r_fail_admin = user_client.post("/admin/login", data={"email": user_email, "password": "senha_errada_123"})
+    assert r_fail_admin.status_code == 401, f"Esperado 401 para senha incorreta, obtido {r_fail_admin.status_code}"
+
+    # 4. Usuário tenta login com credenciais corretas na tela /admin/login
+    r_login_admin_screen = user_client.post(
+        "/admin/login",
+        data={"email": user_email, "password": user_senha},
+        follow_redirects=False
+    )
+    assert r_login_admin_screen.status_code == 303, f"Esperado 303, obtido {r_login_admin_screen.status_code}"
+    assert r_login_admin_screen.headers.get("location") == "/"
+    cookie_user = r_login_admin_screen.cookies.get(auth_service.USER_COOKIE_NAME)
+    assert cookie_user is not None, "Cookie de sessão de usuário não gerado no login via /admin/login!"
+    print("✓ Sucesso: Usuário cadastrado fez login via /admin/login e foi redirecionado para / com cookie válido.")
+
+    # 5. Usuário acessa / com a sessão gerada
+    r_home_ok = user_client.get("/", cookies={auth_service.USER_COOKIE_NAME: cookie_user})
+    assert r_home_ok.status_code == 200, f"Esperado 200 em /, obtido {r_home_ok.status_code}"
+    print("✓ Sucesso: Usuário autenticado acessou / normalmente.")
+
+    # 6. Usuário também consegue autenticar pela tela dedicada /login
+    user_client_2 = TestClient(app)
+    r_login_user_screen = user_client_2.post(
+        "/login",
+        data={"email": user_email, "password": user_senha},
+        follow_redirects=False
+    )
+    assert r_login_user_screen.status_code == 303, f"Esperado 303, obtido {r_login_user_screen.status_code}"
+    assert r_login_user_screen.headers.get("location") == "/"
+    print("✓ Sucesso: Usuário cadastrado também consegue logar via /login com sucesso total.")
+
     print("\n=======================================================")
     print(" TODOS OS TESTES PASSARAM COM SUCESSO ABSOLUTO! (100%) ")
     print("=======================================================")
