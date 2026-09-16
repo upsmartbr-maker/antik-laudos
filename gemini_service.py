@@ -36,7 +36,8 @@ class LaudoGeminiSchema(BaseModel):
 
 def get_logo_base64() -> str:
     """Retorna o logotipo oficial Casa Antik em formato Base64 data URI."""
-    logo_path = os.path.join("static", "Logo Antik.png")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(base_dir, "static", "Logo Antik.png")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf-8")
@@ -149,6 +150,24 @@ def generate_mock_laudo(
     return res
 
 
+def detect_mime_from_buffer(data: bytes, fallback: str = "image/jpeg") -> str:
+    """Detecta o MIME type da imagem a partir dos bytes em memória via PIL."""
+    try:
+        img = Image.open(io.BytesIO(data))
+        fmt = (img.format or "").upper()
+        if fmt == "PNG":
+            return "image/png"
+        elif fmt == "WEBP":
+            return "image/webp"
+        elif fmt == "GIF":
+            return "image/gif"
+        elif fmt in ("JPEG", "JPG"):
+            return "image/jpeg"
+        return fallback
+    except Exception:
+        return fallback
+
+
 def get_mime_type_from_filename(path: str) -> str:
     lower = path.lower()
     if lower.endswith(".png"):
@@ -163,6 +182,8 @@ def get_mime_type_from_filename(path: str) -> str:
 async def gerar_dados_laudo_gemini(
     image_bytes: Optional[bytes] = None,
     image_verso_bytes: Optional[bytes] = None,
+    image_mime: Optional[str] = None,
+    image_verso_mime: Optional[str] = None,
     image_url: Optional[str] = None,
     image_path: Optional[str] = None,
     image_verso_path: Optional[str] = None,
@@ -170,37 +191,43 @@ async def gerar_dados_laudo_gemini(
 ) -> Dict[str, Any]:
     """
     Consulta a Gemini API via SDK google-genai para gerar dados estruturados de laudo.
-    Aceita 1 ou 2 imagens (frente e verso) enviadas via bytes, URL ou caminho de arquivo local.
+    Processamento 100% em memória (io.BytesIO / buffer), compatível com ambientes Serverless (Vercel).
     Calcula determinística e criptograficamente a referência única no padrão #ANTK-2026-{SHA256[:10]}.
     """
     current_api_key = api_key or os.getenv("GEMINI_API_KEY")
 
     # 1. Carregar bytes da imagem frontal
-    mime_type = "image/jpeg"
-    if image_path and os.path.exists(image_path):
+    mime_type = image_mime or "image/jpeg"
+    if image_bytes:
+        if not image_mime or image_mime == "application/octet-stream":
+            mime_type = detect_mime_from_buffer(image_bytes)
+    elif image_path and os.path.exists(image_path):
         with open(image_path, "rb") as f:
             image_bytes = f.read()
         mime_type = get_mime_type_from_filename(image_path)
     elif image_url:
         image_bytes, mime_type = await fetch_image_from_url(image_url)
-    elif not image_bytes:
-        raise ValueError("É necessário fornecer a imagem frontal em arquivo (bytes/caminho) ou uma URL de produto.")
+    else:
+        raise ValueError("É necessário fornecer a imagem frontal em buffer (bytes) ou URL de produto.")
 
     # 2. Carregar bytes da imagem do verso (se fornecida)
-    verso_mime_type = "image/jpeg"
-    if image_verso_path and os.path.exists(image_verso_path):
+    verso_mime_type = image_verso_mime or "image/jpeg"
+    if image_verso_bytes:
+        if not image_verso_mime or image_verso_mime == "application/octet-stream":
+            verso_mime_type = detect_mime_from_buffer(image_verso_bytes)
+    elif image_verso_path and os.path.exists(image_verso_path):
         with open(image_verso_path, "rb") as f:
             image_verso_bytes = f.read()
         verso_mime_type = get_mime_type_from_filename(image_verso_path)
 
-    # 3. Geração determinística do código único via SHA-256
+    # 3. Geração determinística do código único via SHA-256 a partir dos buffers em memória
     if image_verso_bytes:
         hash_calculado = hashlib.sha256(image_bytes + image_verso_bytes).hexdigest()[:10].upper()
     else:
         hash_calculado = hashlib.sha256(image_bytes).hexdigest()[:10].upper()
     referencia_unica = f"#ANTK-2026-{hash_calculado}"
 
-    # Converte os bytes das imagens para Data URI Base64
+    # Converte os buffers de imagem diretamente em Data URI Base64 em memória
     b64_img = base64.b64encode(image_bytes).decode("utf-8")
     b64_data_uri = f"data:{mime_type};base64,{b64_img}"
 
@@ -209,9 +236,9 @@ async def gerar_dados_laudo_gemini(
         b64_verso = base64.b64encode(image_verso_bytes).decode("utf-8")
         b64_verso_data_uri = f"data:{verso_mime_type};base64,{b64_verso}"
 
-    # Se não houver API Key configurada, utiliza o gerador de demonstração com a imagem enviada
+    # Se não houver API Key configurada, utiliza o gerador de demonstração em memória
     if not current_api_key:
-        print("[gemini_service] AVISO: GEMINI_API_KEY não encontrada. Utilizando gerador de fallback estruturado.")
+        print("[gemini_service] AVISO: GEMINI_API_KEY não encontrada. Utilizando gerador de fallback estruturado em memória.")
         res = generate_mock_laudo(
             image_bytes=image_bytes,
             image_mime=mime_type,
@@ -230,9 +257,11 @@ async def gerar_dados_laudo_gemini(
 
     client = genai.Client(api_key=current_api_key)
 
-    # Preparar imagens PIL
+    # Preparar imagens PIL a partir do buffer em memória (io.BytesIO)
     pil_image = Image.open(io.BytesIO(image_bytes))
     pil_verso = None
+    if image_verso_bytes:
+        pil_verso = Image.open(io.BytesIO(image_verso_bytes))
     if image_verso_bytes:
         pil_verso = Image.open(io.BytesIO(image_verso_bytes))
 

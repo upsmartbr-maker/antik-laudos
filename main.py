@@ -29,12 +29,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = os.path.join("static", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-# Monta o diretório de arquivos estáticos
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+# Monta o diretório de arquivos estáticos de forma segura
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 class URLInputPayload(BaseModel):
@@ -60,32 +60,26 @@ async def gerar_laudo_foto(
 ):
     """
     Endpoint para geração do Laudo Técnico em PDF a partir de fotos enviadas (Frente e Verso opcional).
-    Salva os arquivos na pasta static/uploads/ e envia as fotos para a API do Gemini.
+    Processamento 100% em memória (buffer/io.BytesIO), compatível com ambientes Serverless (Vercel).
     """
     if not file or not file.filename:
         raise HTTPException(status_code=400, detail="Por favor, selecione ao menos o arquivo de imagem da frente.")
 
     try:
-        filename = file.filename
-        file_path = os.path.join(UPLOAD_DIR, filename)
-
-        # Salva a imagem da frente
+        # Lê os bytes das fotos diretamente na memória
         content = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(content)
-
-        file_verso_path = None
+        verso_content = None
+        verso_mime = None
         if file_verso and file_verso.filename:
-            verso_filename = f"verso_{file_verso.filename}"
-            file_verso_path = os.path.join(UPLOAD_DIR, verso_filename)
             verso_content = await file_verso.read()
-            with open(file_verso_path, "wb") as f:
-                f.write(verso_content)
+            verso_mime = file_verso.content_type
 
-        # Processamento das imagens via Gemini API com hash determinístico
+        # Processamento das imagens via Gemini API com hash determinístico diretamente em memória
         laudo_json = await gerar_dados_laudo_gemini(
-            image_path=file_path,
-            image_verso_path=file_verso_path
+            image_bytes=content,
+            image_mime=file.content_type,
+            image_verso_bytes=verso_content,
+            image_verso_mime=verso_mime
         )
 
         # Renderização Jinja2 e conversão em PDF A4
@@ -118,40 +112,36 @@ async def gerar_laudo(
     file_verso: Optional[UploadFile] = File(None)
 ):
     """
-    Endpoint principal para geração do Laudo Técnico em PDF.
+    Endpoint principal para geração do Laudo Técnico em PDF (100% em memória).
     """
     image_bytes = None
+    image_mime = None
+    image_verso_bytes = None
+    image_verso_mime = None
     target_url = url or image_url
-    image_path = None
-    image_verso_path = None
 
     if file and file.filename:
-        filename = file.filename
-        image_path = os.path.join(UPLOAD_DIR, filename)
-        content = await file.read()
-        with open(image_path, "wb") as f:
-            f.write(content)
+        image_bytes = await file.read()
+        image_mime = file.content_type
 
     if file_verso and file_verso.filename:
-        verso_filename = f"verso_{file_verso.filename}"
-        image_verso_path = os.path.join(UPLOAD_DIR, verso_filename)
-        verso_content = await file_verso.read()
-        with open(image_verso_path, "wb") as f:
-            f.write(verso_content)
+        image_verso_bytes = await file_verso.read()
+        image_verso_mime = file_verso.content_type
 
-    if not image_path and not target_url:
+    if not image_bytes and not target_url:
         raise HTTPException(
             status_code=400,
             detail="Por favor, forneça o link de um produto (url) ou faça upload de um arquivo de imagem (file)."
         )
 
     try:
-        # 1. Análise via Gemini API
+        # 1. Análise via Gemini API 100% em memória
         laudo_json = await gerar_dados_laudo_gemini(
             image_bytes=image_bytes,
-            image_url=target_url,
-            image_path=image_path,
-            image_verso_path=image_verso_path
+            image_mime=image_mime,
+            image_verso_bytes=image_verso_bytes,
+            image_verso_mime=image_verso_mime,
+            image_url=target_url
         )
 
         # 2. Renderização do Template HTML com Jinja2
@@ -183,31 +173,27 @@ async def analisar_json(
     file: Optional[UploadFile] = File(None),
     file_verso: Optional[UploadFile] = File(None)
 ):
-    """Retorna os dados brutos da análise da peça em formato JSON estrito gerado pelo Gemini."""
+    """Retorna os dados brutos da análise da peça em formato JSON estrito gerado pelo Gemini (100% em memória)."""
     image_bytes = None
+    image_mime = None
+    image_verso_bytes = None
+    image_verso_mime = None
     target_url = url or image_url
-    image_path = None
-    image_verso_path = None
 
     if file and file.filename:
-        filename = file.filename
-        image_path = os.path.join(UPLOAD_DIR, filename)
-        content = await file.read()
-        with open(image_path, "wb") as f:
-            f.write(content)
+        image_bytes = await file.read()
+        image_mime = file.content_type
 
     if file_verso and file_verso.filename:
-        verso_filename = f"verso_{file_verso.filename}"
-        image_verso_path = os.path.join(UPLOAD_DIR, verso_filename)
-        verso_content = await file_verso.read()
-        with open(image_verso_path, "wb") as f:
-            f.write(verso_content)
+        image_verso_bytes = await file_verso.read()
+        image_verso_mime = file_verso.content_type
 
     data = await gerar_dados_laudo_gemini(
         image_bytes=image_bytes,
-        image_url=target_url,
-        image_path=image_path,
-        image_verso_path=image_verso_path
+        image_mime=image_mime,
+        image_verso_bytes=image_verso_bytes,
+        image_verso_mime=image_verso_mime,
+        image_url=target_url
     )
     return data
 
@@ -219,31 +205,27 @@ async def preview_laudo(
     file: Optional[UploadFile] = File(None),
     file_verso: Optional[UploadFile] = File(None)
 ):
-    """Renderiza a visualização em HTML do laudo no navegador sem converter para PDF."""
+    """Renderiza a visualização em HTML do laudo no navegador sem converter para PDF (100% em memória)."""
     image_bytes = None
+    image_mime = None
+    image_verso_bytes = None
+    image_verso_mime = None
     target_url = url or image_url
-    image_path = None
-    image_verso_path = None
 
     if file and file.filename:
-        filename = file.filename
-        image_path = os.path.join(UPLOAD_DIR, filename)
-        content = await file.read()
-        with open(image_path, "wb") as f:
-            f.write(content)
+        image_bytes = await file.read()
+        image_mime = file.content_type
 
     if file_verso and file_verso.filename:
-        verso_filename = f"verso_{file_verso.filename}"
-        image_verso_path = os.path.join(UPLOAD_DIR, verso_filename)
-        verso_content = await file_verso.read()
-        with open(image_verso_path, "wb") as f:
-            f.write(verso_content)
+        image_verso_bytes = await file_verso.read()
+        image_verso_mime = file_verso.content_type
 
     data = await gerar_dados_laudo_gemini(
         image_bytes=image_bytes,
-        image_url=target_url,
-        image_path=image_path,
-        image_verso_path=image_verso_path
+        image_mime=image_mime,
+        image_verso_bytes=image_verso_bytes,
+        image_verso_mime=image_verso_mime,
+        image_url=target_url
     )
     html_rendered = render_html_laudo(data)
     return HTMLResponse(content=html_rendered)
@@ -252,7 +234,7 @@ async def preview_laudo(
 @app.get("/", response_class=HTMLResponse, tags=["UI"])
 async def home_interface():
     """Interface interativa de teste para geração de laudos por foto."""
-    index_path = os.path.join("templates", "index.html")
+    index_path = os.path.join(BASE_DIR, "templates", "index.html")
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())

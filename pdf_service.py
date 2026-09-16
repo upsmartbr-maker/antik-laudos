@@ -6,7 +6,8 @@ from playwright.async_api import async_playwright
 
 def get_logo_base64() -> str:
     """Carrega a imagem estática do logo e converte em data URI base64."""
-    logo_path = os.path.join("static", "Logo Antik.png")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(base_dir, "static", "Logo Antik.png")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf-8")
@@ -15,7 +16,8 @@ def get_logo_base64() -> str:
 
 def render_html_laudo(data: Dict[str, Any]) -> str:
     """Renderiza o template HTML do laudo usando Jinja2."""
-    templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    templates_dir = os.path.join(base_dir, "templates")
     env = Environment(loader=FileSystemLoader(templates_dir))
     template = env.get_template("laudo_template.html")
     
