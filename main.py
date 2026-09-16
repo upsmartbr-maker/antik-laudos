@@ -259,7 +259,15 @@ async def home_interface():
 # ÁREA ADMINISTRATIVA & GESTÃO DE USUÁRIOS (SUPABASE)
 # ==============================================================================
 
+@app.get("/admin", tags=["Admin"])
+@app.get("/admin/", tags=["Admin"])
+async def admin_redirect():
+    """Redireciona o acesso de /admin para /admin/login."""
+    return RedirectResponse(url="/admin/login", status_code=303)
+
+
 @app.get("/admin/login", response_class=HTMLResponse, tags=["Admin"])
+@app.get("/admin/login/", response_class=HTMLResponse, tags=["Admin"])
 async def admin_login_page(request: Request):
     """Exibe a tela de login administrativo com estética clássica Casa Antik."""
     admin = auth_service.get_current_admin(request)
@@ -269,6 +277,7 @@ async def admin_login_page(request: Request):
 
 
 @app.post("/admin/login", tags=["Admin"])
+@app.post("/admin/login/", tags=["Admin"])
 async def admin_login_action(
     request: Request,
     email: str = Form(...),

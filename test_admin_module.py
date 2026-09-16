@@ -7,7 +7,17 @@ import supabase_service
 client = TestClient(app)
 
 def test_admin_flow():
-    print("=== TESTE 1: GET /admin/login sem autenticação ===")
+    print("=== TESTE 0: GET /admin e /admin/ redirecionam para /admin/login ===")
+    r_admin = client.get("/admin", follow_redirects=False)
+    assert r_admin.status_code == 303, f"Esperado 303, obtido {r_admin.status_code}"
+    assert r_admin.headers.get("location") == "/admin/login"
+
+    r_admin_slash = client.get("/admin/", follow_redirects=False)
+    assert r_admin_slash.status_code == 303, f"Esperado 303, obtido {r_admin_slash.status_code}"
+    assert r_admin_slash.headers.get("location") == "/admin/login"
+    print("✓ GET /admin e /admin/ redirecionam com 303 para /admin/login.")
+
+    print("\n=== TESTE 1: GET /admin/login sem autenticação ===")
     r = client.get("/admin/login")
     assert r.status_code == 200, f"Esperado 200, obtido {r.status_code}"
     assert "Casa Antik" in r.text
