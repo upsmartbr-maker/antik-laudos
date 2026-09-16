@@ -531,6 +531,100 @@
       background: var(--marfim-suave);
       border-color: var(--dourado);
     }
+
+    /* Botões de Ação na Tabela */
+    .btn-action {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+
+    .btn-action-edit {
+      background: #FAF4E6;
+      color: #8B1E23;
+      border-color: rgba(212, 175, 55, 0.45);
+    }
+
+    .btn-action-edit:hover {
+      background: #F5E8C9;
+      border-color: var(--dourado);
+      transform: translateY(-1px);
+    }
+
+    .btn-action-delete {
+      background: #FDF2F2;
+      color: #991B1B;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-action-delete:hover {
+      background: #FEE2E2;
+      border-color: #DC2626;
+      transform: translateY(-1px);
+    }
+
+    /* Modal de Edição */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(42, 35, 34, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--marfim-card);
+      border: 2px solid var(--dourado);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      padding: 30px 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+      position: relative;
+      animation: modalFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalFade {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--borda-suave);
+      padding-bottom: 14px;
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      color: var(--texto-suave);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+    }
+
+    .btn-close-modal:hover {
+      color: var(--bordo-nobre);
+    }
   </style>
 </head>
 <body>
@@ -729,28 +823,39 @@
                 <th>Data de Criação</th>
                 <th>Data de Expiração</th>
                 <th>Status</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaUsuariosBody">
               {% if usuarios and usuarios|length > 0 %}
                 {% for u in usuarios %}
-                <tr>
+                <tr id="linha-usuario-{{ u.id }}">
                   <td><strong>{{ u.nome or '-' }}</strong></td>
                   <td>{{ u.email }}</td>
                   <td>{{ u.data_criacao_formatada or u.criado_em or '-' }}</td>
-                  <td>{{ u.data_expiracao_formatada or u.data_expiracao or '-' }}</td>
-                  <td>
+                  <td class="col-expiracao">{{ u.data_expiracao_formatada or u.data_expiracao or '-' }}</td>
+                  <td class="col-status">
                     {% if u.expirado %}
                       <span class="badge-status badge-expired">● Expirado</span>
                     {% else %}
                       <span class="badge-status badge-active">● Ativo</span>
                     {% endif %}
                   </td>
+                  <td>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <button type="button" class="btn-action btn-action-edit" onclick="abrirModalEdicao('{{ u.id }}', '{{ u.nome or '' }}', '{{ u.email }}', '{{ u.tipo_validade or 'Meses' }}', {{ u.quantidade_validade or 6 }})">
+                        ✏️ Editar
+                      </button>
+                      <button type="button" class="btn-action btn-action-delete" onclick="excluirUsuario('{{ u.id }}', '{{ u.email }}', this)">
+                        🗑️ Excluir
+                      </button>
+                    </div>
+                  </td>
                 </tr>
                 {% endfor %}
               {% else %}
                 <tr id="linhaVazia">
-                  <td colspan="5" class="empty-state">
+                  <td colspan="6" class="empty-state">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                       <circle cx="9" cy="7" r="4"></circle>
@@ -770,6 +875,52 @@
 
     </div>
 
+  </div>
+
+  <!-- Modal de Edição de Usuário -->
+  <div id="modalEdicaoUsuario" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--bordo-nobre); font-weight: 700;">
+          Editar Acesso do Usuário
+        </h3>
+        <button type="button" class="btn-close-modal" onclick="fecharModalEdicao()">&times;</button>
+      </div>
+      <form id="formEdicaoUsuario" style="margin-top: 20px;">
+        <input type="hidden" id="editUserId">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="editUserEmail">E-mail (Identificador)</label>
+          <input type="email" id="editUserEmail" class="form-input" disabled style="opacity: 0.7; cursor: not-allowed;">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="editUserNome">Nome Completo</label>
+          <input type="text" id="editUserNome" class="form-input" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="editUserTipoValidade">Tipo de Validade</label>
+            <select id="editUserTipoValidade" class="form-select">
+              <option value="Dias">Dias</option>
+              <option value="Meses">Meses</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editUserPeriodo">Período de Validade</label>
+            <input type="number" id="editUserPeriodo" class="form-input" min="1" max="365" value="6" required>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; cursor: pointer; color: var(--texto-escuro);">
+            <input type="checkbox" id="editUserGerarSenha" style="width: 18px; height: 18px; accent-color: var(--bordo-nobre);">
+            <span><strong>Gerar nova senha temporária</strong> de 10 dígitos para o usuário</span>
+          </label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn-refresh" onclick="fecharModalEdicao()">Cancelar</button>
+          <button type="submit" id="btnSalvarEdicao" class="btn-submit" style="padding: 10px 22px;">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -923,14 +1074,26 @@
         linhaVazia.remove();
       }
 
+      const id = usuario.id || usuario.email;
       const tr = document.createElement("tr");
+      tr.id = `linha-usuario-${id}`;
       tr.innerHTML = `
         <td><strong>${escapeHtml(usuario.nome || "-")}</strong></td>
         <td>${escapeHtml(usuario.email || "-")}</td>
-        <td>${escapeHtml(usuario.data_criacao_formatada || "-")}</td>
-        <td>${escapeHtml(usuario.data_expiracao_formatada || "-")}</td>
-        <td>
+        <td>${escapeHtml(usuario.data_criacao_formatada || "Hoje (Agora)")}</td>
+        <td class="col-expiracao">${escapeHtml(usuario.data_expiracao_formatada || usuario.data_expiracao || "-")}</td>
+        <td class="col-status">
           <span class="badge-status badge-active">● Ativo</span>
+        </td>
+        <td>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn-action btn-action-edit" onclick="abrirModalEdicao('${escapeHtml(id)}', '${escapeHtml(usuario.nome || '')}', '${escapeHtml(usuario.email)}', '${escapeHtml(usuario.tipo_validade || 'Meses')}', ${usuario.quantidade_validade || 6})">
+              ✏️ Editar
+            </button>
+            <button type="button" class="btn-action btn-action-delete" onclick="excluirUsuario('${escapeHtml(id)}', '${escapeHtml(usuario.email)}', this)">
+              🗑️ Excluir
+            </button>
+          </div>
         </td>
       `;
       tabelaBody.insertBefore(tr, tabelaBody.firstChild);
@@ -966,7 +1129,7 @@
       if (!usuarios || usuarios.length === 0) {
         tabelaBody.innerHTML = `
           <tr id="linhaVazia">
-            <td colspan="5" class="empty-state">
+            <td colspan="6" class="empty-state">
               <div>Nenhum usuário cadastrado ainda.</div>
             </td>
           </tr>
@@ -975,20 +1138,162 @@
       }
 
       usuarios.forEach(u => {
+        const id = u.id || u.email;
         const statusBadge = u.expirado 
           ? `<span class="badge-status badge-expired">● Expirado</span>`
           : `<span class="badge-status badge-active">● Ativo</span>`;
 
         const tr = document.createElement("tr");
+        tr.id = `linha-usuario-${id}`;
         tr.innerHTML = `
           <td><strong>${escapeHtml(u.nome || "-")}</strong></td>
           <td>${escapeHtml(u.email || "-")}</td>
           <td>${escapeHtml(u.data_criacao_formatada || u.criado_em || "-")}</td>
-          <td>${escapeHtml(u.data_expiracao_formatada || u.data_expiracao || "-")}</td>
-          <td>${statusBadge}</td>
+          <td class="col-expiracao">${escapeHtml(u.data_expiracao_formatada || u.data_expiracao || "-")}</td>
+          <td class="col-status">${statusBadge}</td>
+          <td>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" class="btn-action btn-action-edit" onclick="abrirModalEdicao('${escapeHtml(id)}', '${escapeHtml(u.nome || '')}', '${escapeHtml(u.email)}', '${escapeHtml(u.tipo_validade || 'Meses')}', ${u.quantidade_validade || 6})">
+                ✏️ Editar
+              </button>
+              <button type="button" class="btn-action btn-action-delete" onclick="excluirUsuario('${escapeHtml(id)}', '${escapeHtml(u.email)}', this)">
+                🗑️ Excluir
+              </button>
+            </div>
+          </td>
         `;
         tabelaBody.appendChild(tr);
       });
+    }
+
+    // Funções do Modal de Edição
+    const modalEdicao = document.getElementById("modalEdicaoUsuario");
+    const formEdicao = document.getElementById("formEdicaoUsuario");
+
+    function abrirModalEdicao(id, nome, email, tipoValidade, periodo) {
+      document.getElementById("editUserId").value = id;
+      document.getElementById("editUserEmail").value = email;
+      document.getElementById("editUserNome").value = nome;
+      document.getElementById("editUserTipoValidade").value = tipoValidade || "Meses";
+      document.getElementById("editUserPeriodo").value = periodo || 6;
+      document.getElementById("editUserGerarSenha").checked = false;
+      modalEdicao.style.display = "flex";
+    }
+
+    function fecharModalEdicao() {
+      modalEdicao.style.display = "none";
+    }
+
+    modalEdicao.addEventListener("click", (e) => {
+      if (e.target === modalEdicao) fecharModalEdicao();
+    });
+
+    // Submissão do Formulário de Edição
+    formEdicao.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editUserId").value;
+      const email = document.getElementById("editUserEmail").value;
+      const nome = document.getElementById("editUserNome").value.trim();
+      const tipoValidade = document.getElementById("editUserTipoValidade").value;
+      const periodo = parseInt(document.getElementById("editUserPeriodo").value, 10);
+      const gerarNovaSenha = document.getElementById("editUserGerarSenha").checked;
+
+      const btnSalvar = document.getElementById("btnSalvarEdicao");
+      btnSalvar.disabled = true;
+      btnSalvar.textContent = "Salvando...";
+
+      try {
+        const resp = await fetch(`/admin/usuarios/${encodeURIComponent(id)}/editar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome: nome,
+            tipo_validade: tipoValidade,
+            quantidade_validade: periodo,
+            gerar_nova_senha: gerarNovaSenha
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ detail: "Falha na atualização" }));
+          throw new Error(err.detail || "Erro ao atualizar usuário");
+        }
+
+        const data = await resp.json();
+
+        // Se uma nova senha foi gerada, exibe o card de destaque para cópia imediata
+        if (data.senha) {
+          ultimoEmailCadastrado = email;
+          ultimaSenhaCadastrada = data.senha;
+          hlNome.textContent = data.nome || nome;
+          hlEmail.textContent = email;
+          hlSenha.textContent = data.senha;
+          hlValidade.textContent = data.data_expiracao_formatada || data.data_expiracao;
+          highlightBox.style.display = "block";
+          highlightBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        // Atualiza a linha na tabela
+        const linha = document.getElementById(`linha-usuario-${id}`);
+        if (linha) {
+          linha.cells[0].innerHTML = `<strong>${escapeHtml(data.nome || nome)}</strong>`;
+          if (data.data_expiracao_formatada || data.data_expiracao) {
+            linha.querySelector(".col-expiracao").textContent = data.data_expiracao_formatada || data.data_expiracao;
+            linha.querySelector(".col-status").innerHTML = `<span class="badge-status badge-active">● Ativo</span>`;
+          }
+        }
+
+        fecharModalEdicao();
+        alert("Acesso atualizado com sucesso!");
+      } catch (err) {
+        alert("Erro ao editar usuário: " + err.message);
+      } finally {
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = "Salvar Alterações";
+      }
+    });
+
+    // Excluir Usuário com Confirmação e Remoção Imediata da Linha
+    async function excluirUsuario(id, email, btn) {
+      if (!confirm(`Deseja realmente remover o acesso de "${email}"?`)) {
+        return;
+      }
+
+      const tr = btn.closest("tr");
+      btn.disabled = true;
+      btn.textContent = "Excluindo...";
+
+      try {
+        const resp = await fetch(`/admin/usuarios/${encodeURIComponent(id)}/excluir`, {
+          method: "POST"
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ detail: "Falha ao excluir" }));
+          throw new Error(err.detail || "Erro ao remover usuário");
+        }
+
+        tr.style.transition = "all 0.3s ease";
+        tr.style.opacity = "0";
+        tr.style.transform = "translateX(20px)";
+        setTimeout(() => {
+          tr.remove();
+          if (tabelaBody.children.length === 0) {
+            tabelaBody.innerHTML = `
+              <tr id="linhaVazia">
+                <td colspan="6" class="empty-state">
+                  <div>Nenhum usuário cadastrado ainda.</div>
+                </td>
+              </tr>
+            `;
+          }
+        }, 300);
+
+      } catch (err) {
+        alert("Erro ao excluir usuário: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "🗑️ Excluir";
+      }
     }
 
     function escapeHtml(text) {

@@ -123,7 +123,43 @@ def test_admin_flow():
     assert r_user_logout.headers.get("location") == "/login"
     print("✓ GET /logout redirecionou para /login.")
 
-    print("\n=== TESTE 8: Logout Admin ===")
+    print("\n=== TESTE 8: Edição de Usuário (/admin/usuarios/{id}/editar) ===")
+    r_edit = client.post(
+        "/admin/usuarios/antiquario@exemplo.com/editar",
+        json={
+            "nome": "Antiquário Nobre Atualizado",
+            "tipo_validade": "Meses",
+            "quantidade_validade": 12,
+            "gerar_nova_senha": True
+        }
+    )
+    assert r_edit.status_code == 200, f"Falha ao editar: {r_edit.status_code} {r_edit.text}"
+    data_edit = r_edit.json()
+    assert data_edit["nome"] == "Antiquário Nobre Atualizado"
+    assert "senha" in data_edit and data_edit["senha"] is not None
+    print(f"✓ Usuário editado com sucesso! Nova senha: {data_edit['senha']}")
+
+    # Edição não autorizada
+    r_edit_unauth = anon.post("/admin/usuarios/antiquario@exemplo.com/editar", json={"nome": "Hacker"})
+    assert r_edit_unauth.status_code == 401
+    print("✓ Edição protegida contra acesso não autenticado (401).")
+
+    print("\n=== TESTE 9: Exclusão de Usuário (/admin/usuarios/{id}/excluir) ===")
+    r_del = client.post("/admin/usuarios/antiquario@exemplo.com/excluir")
+    assert r_del.status_code == 200, f"Falha ao excluir: {r_del.status_code}"
+    print("✓ Usuário excluído com sucesso via POST /excluir.")
+
+    # Exclusão via DELETE
+    r_del_method = client.delete("/admin/usuarios/outro@exemplo.com")
+    assert r_del_method.status_code == 200, f"Falha ao excluir via DELETE: {r_del_method.status_code}"
+    print("✓ Exclusão via DELETE /admin/usuarios/{id} validada com sucesso.")
+
+    # Exclusão não autorizada
+    r_del_unauth = anon.post("/admin/usuarios/antiquario@exemplo.com/excluir")
+    assert r_del_unauth.status_code == 401
+    print("✓ Exclusão protegida contra acesso não autenticado (401).")
+
+    print("\n=== TESTE 10: Logout Admin ===")
     r_logout = client.get("/admin/logout", follow_redirects=False)
     assert r_logout.status_code == 303
     assert r_logout.headers.get("location") == "/admin/login"

@@ -64,6 +64,13 @@ class UsuarioCreatePayload(BaseModel):
         return 6
 
 
+class UsuarioEditPayload(BaseModel):
+    nome: Optional[str] = None
+    tipo_validade: Optional[str] = "Meses"
+    quantidade_validade: Optional[int] = 6
+    gerar_nova_senha: Optional[bool] = False
+
+
 @app.get("/health", tags=["Status"])
 async def health_check():
     """Endpoint de verificação de saúde da API."""
@@ -467,3 +474,45 @@ async def api_listar_usuarios(request: Request):
 
     usuarios = await supabase_service.listar_usuarios_supabase()
     return usuarios
+
+
+@app.post("/admin/usuarios/{id}/editar", tags=["Admin"])
+async def editar_usuario_admin(
+    id: str,
+    payload: UsuarioEditPayload,
+    request: Request
+):
+    """Atualiza dados do usuário no Supabase e opcionalmente gera nova senha."""
+    admin = auth_service.get_current_admin(request)
+    if not admin:
+        raise HTTPException(status_code=401, detail="Sessão não autorizada.")
+
+    try:
+        resultado = await supabase_service.editar_usuario_supabase(
+            identificador=id,
+            nome=payload.nome,
+            tipo_validade=payload.tipo_validade,
+            quantidade_validade=payload.quantidade_validade,
+            gerar_nova_senha=bool(payload.gerar_nova_senha)
+        )
+        return resultado
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
+
+
+@app.delete("/admin/usuarios/{id}", tags=["Admin"])
+@app.post("/admin/usuarios/{id}/excluir", tags=["Admin"])
+async def excluir_usuario_admin(
+    id: str,
+    request: Request
+):
+    """Remove um usuário cadastrado no Supabase."""
+    admin = auth_service.get_current_admin(request)
+    if not admin:
+        raise HTTPException(status_code=401, detail="Sessão não autorizada.")
+
+    try:
+        sucesso = await supabase_service.excluir_usuario_supabase(identificador=id)
+        return {"sucesso": sucesso, "mensagem": "Usuário removido com sucesso."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao remover usuário: {str(e)}")

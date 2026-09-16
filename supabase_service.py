@@ -154,6 +154,33 @@ async def cadastrar_usuario_supabase(
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(rest_url, headers=headers, json=payload_tentativa)
+
+        # Se der erro de e-mail duplicado (409 Conflict ou código 23505), realiza UPDATE (Upsert)
+        if resp.status_code == 409 or (resp.status_code == 400 and ("23505" in resp.text or "duplicate" in resp.text.lower() or "unique" in resp.text.lower())):
+            patch_url = f"{url}/rest/v1/{TABLE_NAME}?email=eq.{email}"
+            patch_payload = dict(payload_tentativa)
+            resp_patch = await client.patch(patch_url, headers=headers, json=patch_payload)
+
+            tentativas = 0
+            while resp_patch.status_code == 400 and tentativas < 4 and ("pgrst204" in resp_patch.text.lower() or "column" in resp_patch.text.lower()):
+                tentativas += 1
+                match = re.search(r"Could not find the '([^']+)' column", resp_patch.text, re.IGNORECASE)
+                if match:
+                    coluna_faltante = match.group(1)
+                    if coluna_faltante in patch_payload:
+                        del patch_payload[coluna_faltante]
+                        resp_patch = await client.patch(patch_url, headers=headers, json=patch_payload)
+                        continue
+                break
+
+            if resp_patch.status_code in (200, 204):
+                return {
+                    **payload,
+                    "periodo": qtd,
+                    "data_expiracao_formatada": data_exp_formatada,
+                    "atualizado": True,
+                    "mensagem": "Cadastro já existente atualizado com nova senha e período renovado com sucesso!"
+                }
         
         # Se der erro 400 com PGRST204 (coluna não encontrada no cache de schema),
         # remove a coluna não existente e retenta de forma adaptativa
@@ -166,6 +193,17 @@ async def cadastrar_usuario_supabase(
                 if coluna_faltante in payload_tentativa:
                     del payload_tentativa[coluna_faltante]
                     resp = await client.post(rest_url, headers=headers, json=payload_tentativa)
+                    # Verifica novamente se deu duplicidade no retry
+                    if resp.status_code == 409 or (resp.status_code == 400 and "23505" in resp.text):
+                        patch_url = f"{url}/rest/v1/{TABLE_NAME}?email=eq.{email}"
+                        resp_patch = await client.patch(patch_url, headers=headers, json=payload_tentativa)
+                        if resp_patch.status_code in (200, 204):
+                            return {
+                                **payload,
+                                "periodo": qtd,
+                                "data_expiracao_formatada": data_exp_formatada,
+                                "atualizado": True
+                            }
                     continue
             break
 
@@ -179,6 +217,116 @@ async def cadastrar_usuario_supabase(
             return {**payload, "periodo": qtd, "data_expiracao_formatada": data_exp_formatada}
 
         raise Exception(f"Erro ao salvar no Supabase ({resp.status_code}): {resp.text}")
+
+
+async def editar_usuario_supabase(
+    identificador: str,
+    nome: Optional[str] = None,
+    tipo_validade: Optional[str] = None,
+    quantidade_validade: Optional[int] = None,
+    gerar_nova_senha: bool = False
+) -> Dict[str, Any]:
+    """
+    Atualiza um usuário existente no Supabase.
+    Permite atualizar nome, período de acesso e opcionalmente gerar nova senha.
+    """
+    url, key = get_supabase_config()
+    headers = get_supabase_headers(key)
+    
+    update_data: Dict[str, Any] = {}
+    if nome:
+        update_data["nome"] = nome.strip()
+    
+    nova_senha = None
+    if gerar_nova_senha:
+        nova_senha = gerar_senha_aleatoria(10)
+        update_data["senha"] = nova_senha
+        update_data["senha_plana"] = nova_senha
+
+    data_exp_formatada = None
+    if tipo_validade and quantidade_validade and quantidade_validade > 0:
+        tipo_val_formatado = "Meses" if "mes" in tipo_validade.lower() else "Dias"
+        update_data["tipo_validade"] = tipo_val_formatado
+        update_data["quantidade_validade"] = quantidade_validade
+        data_exp = calcular_data_expiracao(tipo_validade, quantidade_validade)
+        data_exp_str = data_exp.strftime("%Y-%m-%d")
+        data_exp_formatada = data_exp.strftime("%d/%m/%Y")
+        update_data["data_expiracao"] = data_exp.isoformat()
+
+    if not is_supabase_configured():
+        return {
+            "id": identificador,
+            **update_data,
+            "senha": nova_senha,
+            "data_expiracao_formatada": data_exp_formatada,
+            "aviso_supabase": "SUPABASE_KEY não configurada no .env. Simulado localmente."
+        }
+
+    filtro = f"id=eq.{identificador}" if not "@" in str(identificador) else f"email=eq.{identificador}"
+    rest_url = f"{url}/rest/v1/{TABLE_NAME}?{filtro}"
+
+    payload_tentativa = dict(update_data)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.patch(rest_url, headers=headers, json=payload_tentativa)
+
+        # Adaptação para colunas que possam não existir no schema
+        tentativas = 0
+        while resp.status_code == 400 and tentativas < 4 and ("pgrst204" in resp.text.lower() or "column" in resp.text.lower()):
+            tentativas += 1
+            match = re.search(r"Could not find the '([^']+)' column", resp.text, re.IGNORECASE)
+            if match:
+                coluna_faltante = match.group(1)
+                if coluna_faltante in payload_tentativa:
+                    del payload_tentativa[coluna_faltante]
+                    resp = await client.patch(rest_url, headers=headers, json=payload_tentativa)
+                    continue
+            break
+
+        if resp.status_code in (200, 204):
+            # Tenta buscar os dados completos atualizados
+            resp_get = await client.get(rest_url, headers=headers)
+            if resp_get.status_code == 200 and resp_get.json():
+                user_atualizado = resp_get.json()[0]
+                if nova_senha:
+                    user_atualizado["senha"] = nova_senha
+                if data_exp_formatada:
+                    user_atualizado["data_expiracao_formatada"] = data_exp_formatada
+                return user_atualizado
+
+            return {
+                "id": identificador,
+                **update_data,
+                "senha": nova_senha,
+                "data_expiracao_formatada": data_exp_formatada
+            }
+
+        raise Exception(f"Erro ao atualizar usuário no Supabase ({resp.status_code}): {resp.text}")
+
+
+async def excluir_usuario_supabase(identificador: str) -> bool:
+    """
+    Remove um usuário da tabela usuarios_antik no Supabase.
+    """
+    url, key = get_supabase_config()
+    if not is_supabase_configured():
+        return True
+
+    headers = get_supabase_headers(key)
+    filtro = f"id=eq.{identificador}" if not "@" in str(identificador) else f"email=eq.{identificador}"
+    rest_url = f"{url}/rest/v1/{TABLE_NAME}?{filtro}"
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.delete(rest_url, headers=headers)
+        if resp.status_code in (200, 204):
+            return True
+        # Fallback: se identificador for email e a rota falhou, tenta filtro por email
+        if "@" in str(identificador):
+            resp_email = await client.delete(f"{url}/rest/v1/{TABLE_NAME}?email=eq.{identificador}", headers=headers)
+            if resp_email.status_code in (200, 204):
+                return True
+
+        raise Exception(f"Erro ao excluir usuário no Supabase ({resp.status_code}): {resp.text}")
 
 
 async def listar_usuarios_supabase() -> List[Dict[str, Any]]:
@@ -197,14 +345,20 @@ async def listar_usuarios_supabase() -> List[Dict[str, Any]]:
             resp = await client.get(rest_url, headers=headers)
             if resp.status_code == 200:
                 usuarios = resp.json()
-                # Formata datas para exibição amigável
                 hoje = date.today()
                 for u in usuarios:
+                    # Garante um identificador válido
+                    if not u.get("id"):
+                        u["id"] = u.get("email")
+
+                    # Garante campos para edição
+                    u["tipo_validade"] = u.get("tipo_validade") or "Meses"
+                    u["quantidade_validade"] = u.get("quantidade_validade") or u.get("periodo") or 6
+
                     # Data de expiração
                     dt_exp = u.get("data_expiracao")
                     if dt_exp:
                         try:
-                            # Trata YYYY-MM-DD ou ISO
                             data_obj = datetime.fromisoformat(str(dt_exp).replace("Z", "+00:00")).date() if "T" in str(dt_exp) else datetime.strptime(str(dt_exp)[:10], "%Y-%m-%d").date()
                             u["data_expiracao_formatada"] = data_obj.strftime("%d/%m/%Y")
                             u["expirado"] = data_obj < hoje
@@ -228,11 +382,16 @@ async def listar_usuarios_supabase() -> List[Dict[str, Any]]:
 
                 return usuarios
             elif resp.status_code == 400 and "order" in resp.text:
-                # Caso a coluna criado_em não exista, tenta sem ordenação específica
                 rest_url_fallback = f"{url}/rest/v1/{TABLE_NAME}?select=*"
                 resp_fb = await client.get(rest_url_fallback, headers=headers)
                 if resp_fb.status_code == 200:
-                    return resp_fb.json()
+                    usuarios = resp_fb.json()
+                    for u in usuarios:
+                        if not u.get("id"):
+                            u["id"] = u.get("email")
+                        u["tipo_validade"] = u.get("tipo_validade") or "Meses"
+                        u["quantidade_validade"] = u.get("quantidade_validade") or u.get("periodo") or 6
+                    return usuarios
     except Exception as e:
         print(f"[Supabase] Erro ao listar usuários: {e}")
         return []
