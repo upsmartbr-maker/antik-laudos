@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casa Antik - Painel Administrativo & Gestão de Usuários</title>
+  
+  <!-- Fontes Premium do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --marfim-bg: #F7F4EE;
+      --marfim-card: #FFFFFF;
+      --marfim-suave: #FAF7F2;
+      --bordo-nobre: #8B1E23;
+      --bordo-escuro: #681216;
+      --bordo-suave: rgba(139, 30, 35, 0.08);
+      --dourado: #D4AF37;
+      --dourado-hover: #BF9B27;
+      --dourado-claro: #F9F3DC;
+      --dourado-borda: rgba(212, 175, 55, 0.45);
+      --texto-escuro: #2A2322;
+      --texto-suave: #6B6261;
+      --borda-suave: #E8E2D8;
+      --verde-sucesso: #1E7E34;
+      --verde-sucesso-bg: #EAF8EC;
+      --shadow-sm: 0 4px 12px rgba(139, 30, 35, 0.04);
+      --shadow-md: 0 12px 28px rgba(139, 30, 35, 0.08), 0 4px 10px rgba(0, 0, 0, 0.02);
+      --shadow-destaque: 0 16px 36px rgba(212, 175, 55, 0.18), 0 4px 12px rgba(139, 30, 35, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--marfim-bg);
+      background-image: 
+        radial-gradient(circle at 10% 15%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 85%, rgba(139, 30, 35, 0.04) 0%, transparent 50%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--texto-escuro);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px 60px;
+    }
+
+    /* Container Principal */
+    .admin-container {
+      width: 100%;
+      max-width: 1040px;
+    }
+
+    /* Topbar Administrativa */
+    .admin-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--marfim-card);
+      border: 1px solid var(--dourado-borda);
+      border-radius: 12px;
+      padding: 16px 28px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .nav-seal {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FAF4E6 0%, #F5E8C9 100%);
+      border: 1px solid var(--dourado);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bordo-nobre);
+      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+    }
+
+    .nav-seal svg {
+      width: 22px;
+      height: 22px;
+      fill: var(--bordo-nobre);
+    }
+
+    .nav-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .nav-badge {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dourado);
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-tag {
+      font-size: 13px;
+      color: var(--texto-suave);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--marfim-suave);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--borda-suave);
+    }
+
+    .user-tag strong {
+      color: var(--bordo-nobre);
+    }
+
+    .btn-logout {
+      background: transparent;
+      color: var(--bordo-nobre);
+      border: 1px solid var(--bordo-nobre);
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-logout:hover {
+      background: var(--bordo-nobre);
+      color: #FFFFFF;
+      box-shadow: 0 4px 10px rgba(139, 30, 35, 0.2);
+    }
+
+    /* Alerta Supabase Não Configurado */
+    .banner-warning {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      color: #92400E;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .banner-warning strong {
+      font-weight: 700;
+    }
+
+    /* Grid de Conteúdo */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+
+    /* Card de Conteúdo */
+    .content-card {
+      background: var(--marfim-card);
+      border: 1px solid var(--dourado-borda);
+      border-radius: 12px;
+      padding: 34px 32px;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .content-card::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      bottom: 5px;
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: 9px;
+      pointer-events: none;
+    }
+
+    .card-header {
+      margin-bottom: 26px;
+      border-bottom: 1px solid var(--borda-suave);
+      padding-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title-group h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      letter-spacing: 0.5px;
+    }
+
+    .card-title-group p {
+      font-size: 13.5px;
+      color: var(--texto-suave);
+      margin-top: 3px;
+    }
+
+    /* Formulário de Cadastro */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--texto-suave);
+      margin-bottom: 7px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14.5px;
+      font-family: inherit;
+      color: var(--texto-escuro);
+      background-color: var(--marfim-suave);
+      border: 1px solid var(--borda-suave);
+      border-radius: 6px;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      background-color: #FFFFFF;
+      border-color: var(--bordo-nobre);
+      box-shadow: 0 0 0 3px rgba(139, 30, 35, 0.1);
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--bordo-nobre) 0%, var(--bordo-escuro) 100%);
+      color: #FFFFFF;
+      border: 1px solid var(--dourado);
+      border-radius: 6px;
+      padding: 13px 28px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(139, 30, 35, 0.2);
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, var(--bordo-escuro) 0%, #500D10 100%);
+      box-shadow: 0 6px 16px rgba(139, 30, 35, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Caixa de Destaque Pós-Cadastro */
+    .access-highlight-box {
+      display: none;
+      margin-top: 30px;
+      background: linear-gradient(145deg, #FFFDF8 0%, #FAF3E3 100%);
+      border: 2px solid var(--dourado);
+      border-radius: 10px;
+      padding: 26px 28px;
+      box-shadow: var(--shadow-destaque);
+      animation: fadeInSlide 0.4s ease forwards;
+      position: relative;
+    }
+
+    @keyframes fadeInSlide {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .highlight-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed var(--dourado-borda);
+      padding-bottom: 14px;
+    }
+
+    .highlight-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bordo-nobre);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(139, 30, 35, 0.25);
+    }
+
+    .highlight-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .highlight-field {
+      background: #FFFFFF;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .field-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--texto-suave);
+      margin-bottom: 4px;
+    }
+
+    .field-val {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--texto-escuro);
+      word-break: break-all;
+    }
+
+    .field-val.senha-destaque {
+      font-family: 'Fira Code', monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--bordo-nobre);
+      font-weight: 600;
+      background: #FDF4F4;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid rgba(139, 30, 35, 0.2);
+    }
+
+    /* Botão Copiar Acesso */
+    .actions-highlight {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn-copy-access {
+      background: linear-gradient(135deg, var(--dourado) 0%, #B89225 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      padding: 13px 26px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+    }
+
+    .btn-copy-access:hover {
+      background: linear-gradient(135deg, #E2BD44 0%, var(--dourado-hover) 100%);
+      box-shadow: 0 6px 16px rgba(212, 175, 55, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .copy-success-toast {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      color: var(--verde-sucesso);
+      font-size: 13.5px;
+      font-weight: 600;
+      background: var(--verde-sucesso-bg);
+      border: 1px solid rgba(30, 126, 52, 0.25);
+      padding: 8px 16px;
+      border-radius: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Tabela de Usuários */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .users-table th {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--texto-suave);
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--borda-suave);
+      background: var(--marfim-suave);
+    }
+
+    .users-table td {
+      padding: 14px 16px;
+      font-size: 13.5px;
+      border-bottom: 1px solid var(--borda-suave);
+      color: var(--texto-escuro);
+    }
+
+    .users-table tr:hover td {
+      background: #FAF7F2;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .badge-active {
+      background: #EAF8EC;
+      color: #1E7E34;
+      border: 1px solid rgba(30, 126, 52, 0.2);
+    }
+
+    .badge-expired {
+      background: #FEE2E2;
+      color: #991B1B;
+      border: 1px solid rgba(153, 27, 27, 0.2);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 45px 20px;
+      color: var(--texto-suave);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--dourado);
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    .btn-refresh {
+      background: transparent;
+      border: 1px solid var(--dourado-borda);
+      color: var(--texto-escuro);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-refresh:hover {
+      background: var(--marfim-suave);
+      border-color: var(--dourado);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    
+    <!-- Topbar Administrativa -->
+    <nav class="admin-nav">
+      <div class="nav-brand">
+        <div class="nav-seal">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="nav-title">Casa Antik</div>
+          <div class="nav-badge">Painel Administrativo</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <div class="user-tag">
+          <span>Admin:</span>
+          <strong>{{ admin_email }}</strong>
+        </div>
+        <a href="/" class="btn-refresh" title="Ir para Home">
+          🏛️ Ver Site
+        </a>
+        <a href="/admin/logout" class="btn-logout" title="Encerrar Sessão">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </nav>
+
+    {% if not supabase_configured %}
+    <!-- Aviso amigável caso SUPABASE_KEY não esteja configurada no .env -->
+    <div class="banner-warning">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      <div>
+        <strong>Configuração do Supabase pendente:</strong> O projeto está apontado para <code>https://ezpoytaapskzoueplxxq.supabase.co</code>. Insira a <code>SUPABASE_KEY</code> no arquivo <code>.env</code> para salvar os registros diretamente no banco de dados na nuvem. Os cadastros serão simulados com geração de senha e data no painel.
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-grid">
+      
+      <!-- Card 1: Formulário de Cadastro de Usuário -->
+      <section class="content-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Cadastrar Novo Usuário</h2>
+            <p>Gere credenciais com senha automática de 10 caracteres e cálculo de expiração.</p>
+          </div>
+        </div>
+
+        <form id="formCadastroUsuario">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="nome">Nome Completo</label>
+              <input 
+                type="text" 
+                id="nome" 
+                name="nome" 
+                class="form-input" 
+                placeholder="Ex: Alberto D'Ávila" 
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="email">E-mail do Usuário</label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="cliente@exemplo.com.br" 
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="tipo_validade">Tipo de Validade</label>
+              <select id="tipo_validade" name="tipo_validade" class="form-select" required>
+                <option value="Dias">Dias</option>
+                <option value="Meses" selected>Meses</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="periodo">Quantidade de Período</label>
+              <input 
+                type="number" 
+                id="periodo" 
+                name="periodo" 
+                class="form-input" 
+                min="1" 
+                max="365" 
+                value="6" 
+                required
+              >
+            </div>
+          </div>
+
+          <button type="submit" id="btnCadastrar" class="btn-submit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+            Gerar Acesso & Cadastrar
+          </button>
+        </form>
+
+        <!-- Caixa de Destaque Pós-Cadastro -->
+        <div id="accessHighlightBox" class="access-highlight-box">
+          <div class="highlight-top">
+            <div>
+              <div class="highlight-badge">
+                ✓ Acesso Gerado com Sucesso
+              </div>
+              <p style="font-size: 13px; color: var(--texto-suave); margin-top: 6px;">
+                Guarde ou compartilhe os dados de acesso com o usuário imediatamente:
+              </p>
+            </div>
+          </div>
+
+          <div class="highlight-fields">
+            <div class="highlight-field">
+              <div class="field-title">Nome</div>
+              <div class="field-val" id="hlNome">-</div>
+            </div>
+
+            <div class="highlight-field">
+              <div class="field-title">E-mail</div>
+              <div class="field-val" id="hlEmail">-</div>
+            </div>
+
+            <div class="highlight-field">
+              <div class="field-title">Senha Gerada (10 Dígitos)</div>
+              <div class="field-val senha-destaque" id="hlSenha">----------</div>
+            </div>
+
+            <div class="highlight-field">
+              <div class="field-title">Data de Expiração</div>
+              <div class="field-val" id="hlValidade" style="color: var(--bordo-nobre);">-</div>
+            </div>
+          </div>
+
+          <div class="actions-highlight">
+            <button type="button" id="btnCopiarAcesso" class="btn-copy-access">
+              📋 Copiar Acesso
+            </button>
+            <div id="copySuccessToast" class="copy-success-toast">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              Copiado para a área de transferência!
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Card 2: Listagem de Usuários Cadastrados -->
+      <section class="content-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Usuários Cadastrados</h2>
+            <p>Registros ativos e históricos persistidos na tabela <code>usuarios_antik</code> do Supabase.</p>
+          </div>
+          <button type="button" class="btn-refresh" id="btnRecarregarLista">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Atualizar
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Data de Criação</th>
+                <th>Data de Expiração</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaUsuariosBody">
+              {% if usuarios and usuarios|length > 0 %}
+                {% for u in usuarios %}
+                <tr>
+                  <td><strong>{{ u.nome or '-' }}</strong></td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.data_criacao_formatada or u.criado_em or '-' }}</td>
+                  <td>{{ u.data_expiracao_formatada or u.data_expiracao or '-' }}</td>
+                  <td>
+                    {% if u.expirado %}
+                      <span class="badge-status badge-expired">● Expirado</span>
+                    {% else %}
+                      <span class="badge-status badge-active">● Ativo</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr id="linhaVazia">
+                  <td colspan="5" class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <div>Nenhum usuário cadastrado ainda.</div>
+                    <div style="font-size: 12px; margin-top: 4px;">Utilize o formulário acima para gerar o primeiro acesso.</div>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Variáveis globais dos últimos dados cadastrados
+    let ultimoEmailCadastrado = "";
+    let ultimaSenhaCadastrada = "";
+
+    const form = document.getElementById("formCadastroUsuario");
+    const btnCadastrar = document.getElementById("btnCadastrar");
+    const highlightBox = document.getElementById("accessHighlightBox");
+    const hlNome = document.getElementById("hlNome");
+    const hlEmail = document.getElementById("hlEmail");
+    const hlSenha = document.getElementById("hlSenha");
+    const hlValidade = document.getElementById("hlValidade");
+    const btnCopiar = document.getElementById("btnCopiarAcesso");
+    const copyToast = document.getElementById("copySuccessToast");
+    const tabelaBody = document.getElementById("tabelaUsuariosBody");
+    const btnRecarregar = document.getElementById("btnRecarregarLista");
+
+    // Submissão do Formulário de Cadastro
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const nome = document.getElementById("nome").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const tipo_validade = document.getElementById("tipo_validade").value;
+      const periodo = parseInt(document.getElementById("periodo").value, 10);
+
+      if (!nome || !email || isNaN(periodo) || periodo <= 0) {
+        alert("Por favor, preencha todos os campos corretamente.");
+        return;
+      }
+
+      btnCadastrar.disabled = true;
+      btnCadastrar.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+        </svg>
+        Gerando Credenciais...
+      `;
+
+      try {
+        const response = await fetch("/admin/usuarios", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            nome: nome,
+            email: email,
+            tipo_validade: tipo_validade,
+            periodo: periodo
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({ detail: "Erro desconhecido" }));
+          throw new Error(errData.detail || "Falha ao cadastrar usuário.");
+        }
+
+        const data = await response.json();
+
+        // Armazena credenciais para a função de cópia
+        ultimoEmailCadastrado = data.email;
+        ultimaSenhaCadastrada = data.senha;
+
+        // Preenche a caixa de destaque
+        hlNome.textContent = data.nome || nome;
+        hlEmail.textContent = data.email;
+        hlSenha.textContent = data.senha;
+        hlValidade.textContent = data.data_expiracao_formatada || data.data_expiracao;
+
+        // Exibe a caixa de destaque e rola suavemente até ela
+        highlightBox.style.display = "block";
+        highlightBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+        // Adiciona o novo usuário no topo da tabela imediatamente
+        adicionarUsuarioNaTabela({
+          nome: data.nome,
+          email: data.email,
+          data_criacao_formatada: "Hoje (Agora)",
+          data_expiracao_formatada: data.data_expiracao_formatada || data.data_expiracao,
+          expirado: false
+        });
+
+        // Limpa formulário
+        form.reset();
+        document.getElementById("tipo_validade").value = "Meses";
+        document.getElementById("periodo").value = "6";
+
+      } catch (err) {
+        alert("Erro no cadastro: " + err.message);
+      } finally {
+        btnCadastrar.disabled = false;
+        btnCadastrar.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+          Gerar Acesso & Cadastrar
+        `;
+      }
+    });
+
+    // Botão Copiar Dados de Acesso (Exclusivamente no formato especificado)
+    btnCopiar.addEventListener("click", async () => {
+      if (!ultimoEmailCadastrado || !ultimaSenhaCadastrada) {
+        return;
+      }
+
+      // FORMATO EXCLUSIVO REQUISITADO:
+      // Email: [email]
+      // Senha: [senha_gerada]
+      const textoParaCopiar = `Email: ${ultimoEmailCadastrado}\nSenha: ${ultimaSenhaCadastrada}`;
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(textoParaCopiar);
+        } else {
+          // Fallback para navegadores sem HTTPS/área de transferência segura
+          const textArea = document.createElement("textarea");
+          textArea.value = textoParaCopiar;
+          textArea.style.position = "fixed";
+          textArea.style.opacity = "0";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+        }
+
+        // Mostra o aviso temporário de confirmação
+        copyToast.style.display = "inline-flex";
+        setTimeout(() => {
+          copyToast.style.display = "none";
+        }, 4000);
+
+      } catch (err) {
+        console.error("Falha ao copiar:", err);
+        alert("Não foi possível copiar automaticamente. Por favor, copie manualmente os dados na tela.");
+      }
+    });
+
+    // Adiciona uma linha de usuário no topo da tabela
+    function adicionarUsuarioNaTabela(usuario) {
+      const linhaVazia = document.getElementById("linhaVazia");
+      if (linhaVazia) {
+        linhaVazia.remove();
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(usuario.nome || "-")}</strong></td>
+        <td>${escapeHtml(usuario.email || "-")}</td>
+        <td>${escapeHtml(usuario.data_criacao_formatada || "-")}</td>
+        <td>${escapeHtml(usuario.data_expiracao_formatada || "-")}</td>
+        <td>
+          <span class="badge-status badge-active">● Ativo</span>
+        </td>
+      `;
+      tabelaBody.insertBefore(tr, tabelaBody.firstChild);
+    }
+
+    // Recarregar Lista via API
+    btnRecarregar.addEventListener("click", async () => {
+      btnRecarregar.disabled = true;
+      btnRecarregar.textContent = "Atualizando...";
+      try {
+        const resp = await fetch("/admin/api/usuarios");
+        if (resp.ok) {
+          const usuarios = await resp.json();
+          renderizarTabela(usuarios);
+        }
+      } catch (e) {
+        console.error("Erro ao recarregar lista:", e);
+      } finally {
+        btnRecarregar.disabled = false;
+        btnRecarregar.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Atualizar
+        `;
+      }
+    });
+
+    function renderizarTabela(usuarios) {
+      tabelaBody.innerHTML = "";
+      if (!usuarios || usuarios.length === 0) {
+        tabelaBody.innerHTML = `
+          <tr id="linhaVazia">
+            <td colspan="5" class="empty-state">
+              <div>Nenhum usuário cadastrado ainda.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      usuarios.forEach(u => {
+        const statusBadge = u.expirado 
+          ? `<span class="badge-status badge-expired">● Expirado</span>`
+          : `<span class="badge-status badge-active">● Ativo</span>`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(u.nome || "-")}</strong></td>
+          <td>${escapeHtml(u.email || "-")}</td>
+          <td>${escapeHtml(u.data_criacao_formatada || u.criado_em || "-")}</td>
+          <td>${escapeHtml(u.data_expiracao_formatada || u.data_expiracao || "-")}</td>
+          <td>${statusBadge}</td>
+        `;
+        tabelaBody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+
+</body>
+</html>

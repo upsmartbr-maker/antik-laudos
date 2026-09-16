@@ -2,14 +2,17 @@ import os
 import io
 from typing import Optional
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query, Response
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query, Response, Request
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from gemini_service import gerar_dados_laudo_gemini
 from pdf_service import render_html_laudo, convert_html_to_pdf
+import auth_service
+import supabase_service
 
 # Carrega variáveis de ambiente (.env)
 load_dotenv()
@@ -31,6 +34,10 @@ app.add_middleware(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+
+# Configura templates Jinja2
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Monta o diretório de arquivos estáticos de forma segura
 if os.path.exists(STATIC_DIR):
@@ -40,6 +47,13 @@ if os.path.exists(STATIC_DIR):
 class URLInputPayload(BaseModel):
     url: Optional[str] = None
     image_url: Optional[str] = None
+
+
+class UsuarioCreatePayload(BaseModel):
+    nome: str
+    email: str
+    tipo_validade: str = "Meses"
+    periodo: int = 6
 
 
 @app.get("/health", tags=["Status"])
@@ -239,3 +253,116 @@ async def home_interface():
         with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Casa Antik - Gerador de Laudos</h1>")
+
+
+# ==============================================================================
+# ÁREA ADMINISTRATIVA & GESTÃO DE USUÁRIOS (SUPABASE)
+# ==============================================================================
+
+@app.get("/admin/login", response_class=HTMLResponse, tags=["Admin"])
+async def admin_login_page(request: Request):
+    """Exibe a tela de login administrativo com estética clássica Casa Antik."""
+    admin = auth_service.get_current_admin(request)
+    if admin:
+        return RedirectResponse(url="/admin/dashboard", status_code=303)
+    return templates.TemplateResponse(request=request, name="admin_login.html", context={"erro": None})
+
+
+@app.post("/admin/login", tags=["Admin"])
+async def admin_login_action(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...)
+):
+    """Autentica o administrador e grava o cookie de sessão HttpOnly assinado."""
+    if not auth_service.verify_admin_credentials(email, password):
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_login.html",
+            context={"erro": "E-mail ou senha incorretos."},
+            status_code=401
+        )
+
+    token = auth_service.create_admin_token(email)
+    response = RedirectResponse(url="/admin/dashboard", status_code=303)
+    response.set_cookie(
+        key=auth_service.COOKIE_NAME,
+        value=token,
+        httponly=True,
+        max_age=auth_service.SESSION_DURATION_SECONDS,
+        samesite="lax",
+        secure=False  # Permite funcionamento tanto em desenvolvimento (HTTP) quanto em produção (HTTPS)
+    )
+    return response
+
+
+@app.get("/admin/logout", tags=["Admin"])
+async def admin_logout():
+    """Encerra a sessão do administrador e remove o cookie de autenticação."""
+    response = RedirectResponse(url="/admin/login", status_code=303)
+    response.delete_cookie(key=auth_service.COOKIE_NAME)
+    return response
+
+
+@app.get("/admin/dashboard", response_class=HTMLResponse, tags=["Admin"])
+async def admin_dashboard(request: Request):
+    """
+    Painel administrativo protegido.
+    Redireciona para /admin/login caso a sessão não seja válida.
+    """
+    admin = auth_service.get_current_admin(request)
+    if not admin:
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    usuarios = await supabase_service.listar_usuarios_supabase()
+    supabase_configured = supabase_service.is_supabase_configured()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_dashboard.html",
+        context={
+            "admin_email": admin.get("sub", auth_service.ADMIN_EMAIL_DEFAULT),
+            "usuarios": usuarios,
+            "supabase_configured": supabase_configured
+        }
+    )
+
+
+@app.post("/admin/usuarios", tags=["Admin"])
+async def criar_usuario_admin(
+    request: Request,
+    payload: UsuarioCreatePayload
+):
+    """
+    Endpoint administrativo para cadastrar novo usuário:
+    - Gera senha aleatória e segura de 10 dígitos (maiúsculas, minúsculas, números).
+    - Calcula data de expiração somando dias ou meses.
+    - Persiste na tabela usuarios_antik do Supabase.
+    """
+    admin = auth_service.get_current_admin(request)
+    if not admin:
+        raise HTTPException(status_code=401, detail="Sessão não autorizada ou expirada.")
+
+    try:
+        resultado = await supabase_service.cadastrar_usuario_supabase(
+            nome=payload.nome,
+            email=payload.email,
+            tipo_validade=payload.tipo_validade,
+            periodo=payload.periodo
+        )
+        return resultado
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao cadastrar usuário: {str(e)}")
+
+
+@app.get("/admin/api/usuarios", tags=["Admin"])
+async def api_listar_usuarios(request: Request):
+    """Retorna os usuários cadastrados em formato JSON."""
+    admin = auth_service.get_current_admin(request)
+    if not admin:
+        raise HTTPException(status_code=401, detail="Sessão não autorizada.")
+
+    usuarios = await supabase_service.listar_usuarios_supabase()
+    return usuarios
