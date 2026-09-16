@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import string
 from datetime import datetime, date, timedelta
@@ -94,7 +95,8 @@ async def cadastrar_usuario_supabase(
     nome: str,
     email: str,
     tipo_validade: str,
-    periodo: int
+    periodo: int = 6,
+    quantidade_validade: Optional[int] = None
 ) -> Dict[str, Any]:
     """
     Gera senha de 10 caracteres, calcula expiração e persiste no Supabase.
@@ -106,36 +108,40 @@ async def cadastrar_usuario_supabase(
     nome = (nome or "").strip()
     email = (email or "").strip().lower()
     
+    qtd = quantidade_validade if (quantidade_validade is not None and quantidade_validade > 0) else periodo
     if not nome:
         raise ValueError("O nome do usuário é obrigatório.")
     if not email or "@" not in email:
         raise ValueError("Um endereço de email válido é obrigatório.")
-    if periodo <= 0:
+    if qtd <= 0:
         raise ValueError("O período de validade deve ser maior que zero.")
 
     # 1. Geração de senha e cálculo da data de expiração
     senha_gerada = gerar_senha_aleatoria(10)
-    data_exp = calcular_data_expiracao(tipo_validade, periodo)
+    data_exp = calcular_data_expiracao(tipo_validade, qtd)
     data_exp_str = data_exp.strftime("%Y-%m-%d")
     data_exp_formatada = data_exp.strftime("%d/%m/%Y")
-    criado_em_iso = datetime.utcnow().isoformat()
+    data_expiracao_iso = data_exp.isoformat()
 
-    novo_usuario = {
+    tipo_val_formatado = "Meses" if "mes" in (tipo_validade or "").lower() else "Dias"
+
+    # Payload alinhado com as colunas do Supabase com senha e senha_plana
+    payload = {
         "nome": nome,
         "email": email,
         "senha": senha_gerada,
-        "tipo_validade": "Meses" if "mes" in tipo_validade.lower() else "Dias",
-        "periodo": periodo,
-        "data_expiracao": data_exp_str,
-        "criado_em": criado_em_iso,
-        "ativo": True
+        "senha_plana": senha_gerada,
+        "tipo_validade": tipo_val_formatado,
+        "quantidade_validade": qtd,
+        "data_expiracao": data_expiracao_iso
     }
 
     # 2. Persistência no Supabase via REST API ou Supabase SDK
     if not is_supabase_configured():
         # Retorna os dados gerados com aviso para ambiente local sem chave
         return {
-            **novo_usuario,
+            **payload,
+            "periodo": qtd,
             "data_expiracao_formatada": data_exp_formatada,
             "aviso_supabase": "SUPABASE_KEY não configurada no .env. Dados gerados localmente para validação."
         }
@@ -144,10 +150,25 @@ async def cadastrar_usuario_supabase(
     rest_url = f"{url}/rest/v1/{TABLE_NAME}"
     headers = get_supabase_headers(key)
 
+    payload_tentativa = dict(payload)
+
     async with httpx.AsyncClient(timeout=10.0) as client:
-        # Tenta inserir com o payload completo
-        resp = await client.post(rest_url, headers=headers, json=novo_usuario)
+        resp = await client.post(rest_url, headers=headers, json=payload_tentativa)
         
+        # Se der erro 400 com PGRST204 (coluna não encontrada no cache de schema),
+        # remove a coluna não existente e retenta de forma adaptativa
+        tentativas = 0
+        while resp.status_code == 400 and tentativas < 4 and ("pgrst204" in resp.text.lower() or "column" in resp.text.lower()):
+            tentativas += 1
+            match = re.search(r"Could not find the '([^']+)' column", resp.text, re.IGNORECASE)
+            if match:
+                coluna_faltante = match.group(1)
+                if coluna_faltante in payload_tentativa:
+                    del payload_tentativa[coluna_faltante]
+                    resp = await client.post(rest_url, headers=headers, json=payload_tentativa)
+                    continue
+            break
+
         if resp.status_code in (200, 201):
             dados_retornados = resp.json()
             if isinstance(dados_retornados, list) and len(dados_retornados) > 0:
@@ -155,20 +176,7 @@ async def cadastrar_usuario_supabase(
                 item["senha"] = senha_gerada  # Garante retorno da senha gerada
                 item["data_expiracao_formatada"] = data_exp_formatada
                 return item
-            return {**novo_usuario, "data_expiracao_formatada": data_exp_formatada}
-
-        # Caso a tabela tenha um schema mais restrito (ex: apenas colunas essenciais)
-        if resp.status_code == 400 and "column" in resp.text.lower():
-            payload_essencial = {
-                "nome": nome,
-                "email": email,
-                "senha": senha_gerada,
-                "data_expiracao": data_exp_str
-            }
-            resp_retry = await client.post(rest_url, headers=headers, json=payload_essencial)
-            if resp_retry.status_code in (200, 201):
-                return {**novo_usuario, "data_expiracao_formatada": data_exp_formatada}
-            raise Exception(f"Erro ao inserir no Supabase (retry): {resp_retry.text}")
+            return {**payload, "periodo": qtd, "data_expiracao_formatada": data_exp_formatada}
 
         raise Exception(f"Erro ao salvar no Supabase ({resp.status_code}): {resp.text}")
 

@@ -53,7 +53,15 @@ class UsuarioCreatePayload(BaseModel):
     nome: str
     email: str
     tipo_validade: str = "Meses"
-    periodo: int = 6
+    periodo: Optional[int] = None
+    quantidade_validade: Optional[int] = None
+
+    def get_quantidade(self) -> int:
+        if self.quantidade_validade is not None and self.quantidade_validade > 0:
+            return self.quantidade_validade
+        if self.periodo is not None and self.periodo > 0:
+            return self.periodo
+        return 6
 
 
 @app.get("/health", tags=["Status"])
@@ -353,11 +361,13 @@ async def criar_usuario_admin(
         raise HTTPException(status_code=401, detail="Sessão não autorizada ou expirada.")
 
     try:
+        quantidade = payload.get_quantidade()
         resultado = await supabase_service.cadastrar_usuario_supabase(
             nome=payload.nome,
             email=payload.email,
             tipo_validade=payload.tipo_validade,
-            periodo=payload.periodo
+            periodo=quantidade,
+            quantidade_validade=quantidade
         )
         return resultado
     except ValueError as ve:
