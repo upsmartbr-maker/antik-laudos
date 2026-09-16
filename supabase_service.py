@@ -238,3 +238,66 @@ async def listar_usuarios_supabase() -> List[Dict[str, Any]]:
         return []
 
     return []
+
+
+async def autenticar_usuario_supabase(email: str, senha: str) -> tuple[bool, str, Optional[Dict[str, Any]]]:
+    """
+    Autentica um usuário cadastrado na tabela usuarios_antik:
+    1. Normaliza e-mail com .strip().lower() e senha com .strip()
+    2. Consulta o Supabase com filtro .eq("email", email_limpo)
+    3. Valida se a senha corresponde ao campo salvo (senha ou senha_plana)
+    4. Verifica se data_expiracao não expirou em relação à data atual
+    """
+    email_limpo = (email or "").strip().lower()
+    senha_limpa = (senha or "").strip()
+
+    if not email_limpo or not senha_limpa:
+        return False, "Por favor, preencha o e-mail e a senha.", None
+
+    url, key = get_supabase_config()
+    if not is_supabase_configured():
+        # Caso em desenvolvimento local sem chave do Supabase configurada
+        return False, "Configuração do Supabase não encontrada no servidor (.env).", None
+
+    rest_url = f"{url}/rest/v1/{TABLE_NAME}?email=eq.{email_limpo}&select=*"
+    headers = get_supabase_headers(key)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(rest_url, headers=headers)
+            if resp.status_code != 200:
+                print(f"[Supabase Login] Erro na consulta ({resp.status_code}): {resp.text}")
+                return False, "Erro ao consultar credenciais no banco de dados.", None
+
+            usuarios = resp.json()
+            if not usuarios or not isinstance(usuarios, list) or len(usuarios) == 0:
+                return False, "E-mail ou senha incorretos.", None
+
+            user_data = usuarios[0]
+
+            # Validação da senha salva (senha ou senha_plana)
+            senha_salva = str(user_data.get("senha") or user_data.get("senha_plana") or "").strip()
+            if not senha_salva or senha_limpa != senha_salva:
+                return False, "E-mail ou senha incorretos.", None
+
+            # Validação da data de validade (data_expiracao)
+            data_exp = user_data.get("data_expiracao")
+            if data_exp:
+                try:
+                    hoje = date.today()
+                    if "T" in str(data_exp):
+                        dt_exp = datetime.fromisoformat(str(data_exp).replace("Z", "+00:00")).date()
+                    else:
+                        dt_exp = datetime.strptime(str(data_exp)[:10], "%Y-%m-%d").date()
+
+                    if dt_exp < hoje:
+                        return False, "Assinatura ou período de acesso expirado.", user_data
+                except Exception as e:
+                    print(f"[Supabase Login] Erro ao parsear data_expiracao: {e}")
+
+            # Usuário autenticado com sucesso
+            return True, "Login realizado com sucesso.", user_data
+
+    except Exception as e:
+        print(f"[Supabase Login] Exceção durante autenticação: {e}")
+        return False, f"Falha na comunicação com o servidor de autenticação: {str(e)}", None

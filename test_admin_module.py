@@ -86,11 +86,48 @@ def test_admin_flow():
     assert "data_expiracao" in dados
     print(f"✓ Usuário cadastrado! Senha gerada: {dados['senha']} (10 caracteres seguros), Validade: {dados['data_expiracao']}")
 
-    print("\n=== TESTE 6: Logout ===")
+    print("\n=== TESTE 6: Normalização de credenciais com espaços e maiúsculas ===")
+    r_norm = client.post(
+        "/admin/login",
+        data={"email": f"  {admin_email.upper()}  ", "password": f"  {admin_pass}  "},
+        follow_redirects=False
+    )
+    assert r_norm.status_code == 303, f"Esperado 303 com normalização, obtido {r_norm.status_code}"
+    print("✓ Normalização .strip().lower() e .strip() validada com sucesso.")
+
+    print("\n=== TESTE 7: Rotas de Usuário Comum (/login, /logout, /) ===")
+    anon = TestClient(app)
+    # / redireciona para /login se não autenticado
+    r_home_anon = anon.get("/", follow_redirects=False)
+    assert r_home_anon.status_code == 303
+    assert r_home_anon.headers.get("location") == "/login"
+    print("✓ Acesso a / sem autenticação redireciona para /login.")
+
+    # /login carrega tela
+    r_login_page = anon.get("/login")
+    assert r_login_page.status_code == 200
+    assert "Casa Antik" in r_login_page.text
+    assert "E-mail de Acesso" in r_login_page.text
+    print("✓ GET /login carregou a tela de login de usuários com sucesso.")
+
+    # Usuário comum não acessa dashboard de admin
+    user_token = auth_service.create_user_token("cliente@teste.com", "Cliente Teste")
+    r_user_dashboard = anon.get("/admin/dashboard", cookies={auth_service.USER_COOKIE_NAME: user_token}, follow_redirects=False)
+    assert r_user_dashboard.status_code == 303
+    assert r_user_dashboard.headers.get("location") == "/admin/login"
+    print("✓ Usuário comum impedido de acessar /admin/dashboard (separação de rotas garantida).")
+
+    # Logout geral
+    r_user_logout = anon.get("/logout", follow_redirects=False)
+    assert r_user_logout.status_code == 303
+    assert r_user_logout.headers.get("location") == "/login"
+    print("✓ GET /logout redirecionou para /login.")
+
+    print("\n=== TESTE 8: Logout Admin ===")
     r_logout = client.get("/admin/logout", follow_redirects=False)
     assert r_logout.status_code == 303
     assert r_logout.headers.get("location") == "/admin/login"
-    print("✓ Logout efetuado e redirecionado para o login.")
+    print("✓ Logout administrativo efetuado e redirecionado para o login.")
 
     print("\n=======================================================")
     print(" TODOS OS TESTES PASSARAM COM SUCESSO ABSOLUTO! (100%) ")

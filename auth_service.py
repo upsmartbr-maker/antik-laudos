@@ -65,3 +65,43 @@ def get_current_admin(request: Request) -> Optional[dict]:
     """Obtém os dados do admin logado a partir do cookie de sessão da requisição."""
     token = request.cookies.get(COOKIE_NAME)
     return verify_admin_token(token)
+
+
+USER_COOKIE_NAME = "antik_user_session"
+
+
+def create_user_token(email: str, nome: Optional[str] = None) -> str:
+    """Gera um token JWT assinado para usuários comuns do gerador de laudos."""
+    now = int(time.time())
+    payload = {
+        "sub": email.strip().lower(),
+        "nome": (nome or "").strip(),
+        "role": "user",
+        "iat": now,
+        "exp": now + SESSION_DURATION_SECONDS
+    }
+    return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
+
+
+def verify_user_token(token: Optional[str]) -> Optional[dict]:
+    """Valida o token JWT do usuário comum e retorna o payload decodificado ou None se inválido."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
+        if payload.get("role") in ("user", "admin"):
+            return payload
+    except Exception:
+        return None
+    return None
+
+
+def get_current_user(request: Request) -> Optional[dict]:
+    """Obtém os dados do usuário autenticado a partir dos cookies de sessão."""
+    # Permite tanto o cookie de usuário quanto o de administrador
+    admin = get_current_admin(request)
+    if admin:
+        return admin
+
+    user_token = request.cookies.get(USER_COOKIE_NAME)
+    return verify_user_token(user_token)

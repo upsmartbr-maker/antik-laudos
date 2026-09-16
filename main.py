@@ -254,13 +254,92 @@ async def preview_laudo(
 
 
 @app.get("/", response_class=HTMLResponse, tags=["UI"])
-async def home_interface():
-    """Interface interativa de teste para geração de laudos por foto."""
+async def home_interface(request: Request):
+    """Interface interativa de teste para geração de laudos por foto (requer autenticação)."""
+    user = auth_service.get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
     index_path = os.path.join(BASE_DIR, "templates", "index.html")
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Casa Antik - Gerador de Laudos</h1>")
+
+
+# ==============================================================================
+# AUTENTICAÇÃO DE USUÁRIOS (GERADOR DE LAUDOS)
+# ==============================================================================
+
+@app.get("/login", response_class=HTMLResponse, tags=["Autenticação"])
+@app.get("/login/", response_class=HTMLResponse, tags=["Autenticação"])
+async def user_login_page(request: Request):
+    """Exibe a tela de login para usuários clientes e antiquários."""
+    user = auth_service.get_current_user(request)
+    if user:
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse(request=request, name="login.html", context={"erro": None})
+
+
+@app.post("/login", tags=["Autenticação"])
+@app.post("/login/", tags=["Autenticação"])
+async def user_login_action(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...)
+):
+    """Autentica o usuário consultando a tabela usuarios_antik do Supabase."""
+    email_limpo = (email or "").strip().lower()
+    senha_limpa = (password or "").strip()
+
+    # Caso seja o administrador efetuando login pela rota comum
+    if auth_service.verify_admin_credentials(email_limpo, senha_limpa):
+        token = auth_service.create_admin_token(email_limpo)
+        response = RedirectResponse(url="/", status_code=303)
+        response.set_cookie(
+            key=auth_service.COOKIE_NAME,
+            value=token,
+            httponly=True,
+            max_age=auth_service.SESSION_DURATION_SECONDS,
+            samesite="lax",
+            secure=False
+        )
+        return response
+
+    # Consulta e autentica contra a tabela usuarios_antik do Supabase
+    sucesso, msg, user_data = await supabase_service.autenticar_usuario_supabase(email_limpo, senha_limpa)
+    if not sucesso:
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={"erro": msg},
+            status_code=401
+        )
+
+    # Emite cookie de sessão para o usuário
+    user_token = auth_service.create_user_token(
+        email=email_limpo,
+        nome=user_data.get("nome", "") if user_data else ""
+    )
+    response = RedirectResponse(url="/", status_code=303)
+    response.set_cookie(
+        key=auth_service.USER_COOKIE_NAME,
+        value=user_token,
+        httponly=True,
+        max_age=auth_service.SESSION_DURATION_SECONDS,
+        samesite="lax",
+        secure=False
+    )
+    return response
+
+
+@app.get("/logout", tags=["Autenticação"])
+async def user_logout():
+    """Encerra a sessão do usuário ou administrador e redireciona para a tela de login."""
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(key=auth_service.USER_COOKIE_NAME)
+    response.delete_cookie(key=auth_service.COOKIE_NAME)
+    return response
 
 
 # ==============================================================================
@@ -291,8 +370,11 @@ async def admin_login_action(
     email: str = Form(...),
     password: str = Form(...)
 ):
-    """Autentica o administrador e grava o cookie de sessão HttpOnly assinado."""
-    if not auth_service.verify_admin_credentials(email, password):
+    """Autentica o administrador com normalização de espaços e grava o cookie HttpOnly."""
+    email_limpo = (email or "").strip().lower()
+    senha_limpa = (password or "").strip()
+
+    if not auth_service.verify_admin_credentials(email_limpo, senha_limpa):
         return templates.TemplateResponse(
             request=request,
             name="admin_login.html",
@@ -300,7 +382,7 @@ async def admin_login_action(
             status_code=401
         )
 
-    token = auth_service.create_admin_token(email)
+    token = auth_service.create_admin_token(email_limpo)
     response = RedirectResponse(url="/admin/dashboard", status_code=303)
     response.set_cookie(
         key=auth_service.COOKIE_NAME,
