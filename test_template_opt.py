@@ -1,8 +1,9 @@
 import os
 from pdf_service import render_html_laudo, get_logo_base64, gerar_qrcode_laudo
+from gemini_service import otimizar_imagem_base64
 
-def test_template_optimizations():
-    print("=== TESTE DE OTIMIZAÇÕES DO TEMPLATE DE LAUDO ===")
+def test_template_restoration():
+    print("=== TESTE DE RESTAURAÇÃO DE LAYOUT ORIGINAL E WEBP ===")
     
     descricao_3_paragrafos = (
         "Composição tridimensional do tipo assemblage representando o modelo automobilístico Peugeot de 1912, "
@@ -13,6 +14,16 @@ def test_template_optimizations():
         "apresentando excelente estado de conservação sem oxidações ativas nos metais ornamentais."
     )
     
+    # Teste de imagem WebP com Pillow
+    from PIL import Image
+    import io
+    test_img = Image.new("RGBA", (100, 100), color=(180, 50, 50, 255))
+    buf = io.BytesIO()
+    test_img.save(buf, format="PNG")
+    webp_data_uri = otimizar_imagem_base64(buf.getvalue(), max_dim=1200, quality=88)
+    assert "data:image/webp;base64," in webp_data_uri, "Otimização não retornou WebP!"
+    print("✓ Sucesso: otimizar_imagem_base64 gera data:image/webp;base64 com Pillow.")
+
     mock_data = {
         "referencia": "#ANTK-2026-F9A8B7C6",
         "hash_foto": "F9A8B7C6",
@@ -31,35 +42,39 @@ def test_template_optimizations():
             {"cenario": "Venda Direta / Colecionador", "faixa_preco": "R$ 6.500 - 8.200"},
             {"cenario": "Avaliação Patrimonial", "faixa_preco": "R$ 7.500"}
         ],
-        "imagem_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        "imagem_url": webp_data_uri
     }
     
     html = render_html_laudo(mock_data)
     
-    # 1. Validação de remoção de base64 duplicado do logo
-    logo_b64 = get_logo_base64()
-    count_logo_in_html = html.count(logo_b64)
-    print(f"Ocorrências do Base64 do logotipo no HTML: {count_logo_in_html}")
-    assert count_logo_in_html == 1, f"Esperado exatamente 1 ocorrência do Base64 no HTML, obtido {count_logo_in_html}!"
-    assert '<img src="{{ logo_base64 }}" class="watermark"' not in html
-    assert '<img' not in html.split('class="watermark"')[0][-30:] if 'class="watermark"' in html else True
-    print("✓ Sucesso: Base64 do logotipo não está duplicado! Apenas 1 ocorrência presente.")
+    # 1. Validação do Marca d'água <img> clássica
+    assert '<img src="' in html and 'class="watermark"' in html, "Tag <img> watermark não encontrada!"
+    assert "width: 130mm;" in html, "Largura de 130mm da watermark não encontrada!"
+    assert "opacity: 0.04;" in html, "Opacidade de 0.04 da watermark não encontrada!"
+    assert "watermarkBg" not in html, "Script/div auxiliar watermarkBg não deveria existir!"
+    print("✓ Sucesso: Marca d'água clássica restaurada como tag <img> (.watermark, 130mm, opacity 0.04).")
     
-    # 2. Validação do QR Code
+    # 2. Validação das medidas exatas e tipografia
+    assert "font-family: 'Georgia', 'Times New Roman', serif;" in html, "Tipografia body incorreta!"
+    assert "padding: 15mm 15mm 12mm 15mm;" in html, "Padding do container incorreto!"
+    assert "top: 8mm; left: 8mm; right: 8mm; bottom: 8mm;" in html or "top: 8mm;" in html, "Margens do page-border incorretas!"
+    assert "width: 55px;" in html and "height: 55px;" in html, "Dimensões do header-logo incorretas!"
+    assert "font-size: 24px;" in html, "Tamanho brand-title incorreto!"
+    assert "font-size: 13px;" in html, "Tamanho section-title incorreto!"
+    assert "font-size: 10.5px;" in html, "Tamanho specs-table / text-box incorreto!"
+    assert "line-height: 1.45;" in html, "Line-height do text-box incorreto!"
+    assert "font-size: 10px;" in html, "Tamanho swot-box / pricing-table incorreto!"
+    assert "font-size: 8.5px;" in html, "Tamanho footer incorreto!"
+    print("✓ Sucesso: Todas as medidas e regras CSS do layout original rigorosamente validadas.")
+    
+    # 3. QR Code e links de autenticação
     assert 'class="header-qrcode"' in html, "Tag do QR Code não encontrada!"
     assert 'https://www.antik.com.br/laudo/F9A8B7C6' in html, "URL do QR Code não encontrada!"
-    assert 'data:image/png;base64,' in html, "QR Code base64 não gerado!"
-    print("✓ Sucesso: QR Code presente no cabeçalho com URL correta de autenticação.")
-    
-    # 3. Validação de Padding e Fonte
-    assert "padding: 10mm 12mm 10mm 12mm;" in html, "Padding A4 incorreto!"
-    assert "Baskerville" in html, "Fallback de fonte serif não encontrado!"
-    assert "Times New Roman" in html, "Fallback Times New Roman não encontrado!"
-    print("✓ Sucesso: Padding A4 de 10mm 12mm e fallbacks de fontes devidamente configurados.")
+    print("✓ Sucesso: QR Code presente no cabeçalho com URL correta de validação.")
     
     print("\n=======================================================")
-    print(" TODOS OS REQUISITOS DO TEMPLATE FORAM ATENDIDOS 100%! ")
+    print(" TODOS OS REQUISITOS FORAM RESTAURADOS COM 100% SUCESSO! ")
     print("=======================================================")
 
 if __name__ == "__main__":
-    test_template_optimizations()
+    test_template_restoration()

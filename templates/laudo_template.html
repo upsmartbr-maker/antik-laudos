@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     @page {
-      size: A4 portrait;
+      size: A4;
       margin: 0;
     }
 
@@ -21,7 +21,6 @@
         background-color: #FAFAFA !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        overflow: hidden !important;
       }
     }
 
@@ -36,65 +35,57 @@
       padding: 0;
       width: 210mm;
       height: 297mm;
-      max-height: 297mm;
-      font-family: 'Cormorant Garamond', Baskerville, 'Times New Roman', Georgia, serif;
+      font-family: 'Georgia', 'Times New Roman', serif;
       background-color: #FAFAFA;
       color: #2C2C2C;
       position: relative;
       overflow: hidden;
     }
 
-    /* Borda Elegante Dupla A4 */
+    /* Borda Elegante Dupla */
     .page-border {
       position: absolute;
-      top: 6mm;
-      left: 6mm;
-      right: 6mm;
-      bottom: 6mm;
+      top: 8mm;
+      left: 8mm;
+      right: 8mm;
+      bottom: 8mm;
       border: 2px solid #8B1E23;
       outline: 1px solid #D4AF37;
-      outline-offset: -3px;
+      outline-offset: -4px;
       pointer-events: none;
       z-index: 10;
     }
 
-    /* Marca d'Água Centralizada (Reutiliza imagem do header sem duplicar Base64) */
-    .watermark-bg {
+    /* Marca d'Água Centralizada */
+    .watermark {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 125mm;
-      height: 125mm;
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
+      width: 130mm;
       opacity: 0.04;
       z-index: 1;
       pointer-events: none;
     }
 
-    /* Container de Conteúdo com Padding Calibrado A4 */
+    /* Container de Conteúdo */
     .container {
       position: relative;
       z-index: 2;
-      padding: 10mm 12mm 10mm 12mm;
+      padding: 15mm 15mm 12mm 15mm;
       height: 100%;
-      max-height: 297mm;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      overflow: hidden;
     }
 
     /* Cabeçalho */
     header {
-      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 2px solid #D4AF37;
-      padding-bottom: 8px;
+      padding-bottom: 12px;
     }
 
     .header-logo-container {
@@ -104,27 +95,26 @@
     }
 
     .header-logo {
-      width: 50px;
-      height: 50px;
+      width: 55px;
+      height: 55px;
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
       object-fit: cover;
     }
 
     .brand-title {
-      font-family: 'Cormorant Garamond', Baskerville, 'Times New Roman', Georgia, serif;
-      font-size: 22px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
       font-weight: 600;
       color: #8B1E23;
       letter-spacing: 1.5px;
       margin: 0;
       text-transform: uppercase;
-      line-height: 1.1;
     }
 
     .brand-subtitle {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      font-size: 9.5px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 10px;
       font-weight: 500;
       color: #666;
       margin: 2px 0 0 0;
@@ -139,14 +129,12 @@
     }
 
     .doc-title-block {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
+      text-align: right;
     }
 
     .doc-title {
-      font-family: 'Cormorant Garamond', Baskerville, 'Times New Roman', Georgia, serif;
-      font-size: 13.5px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
       font-weight: 600;
       color: #8B1E23;
       text-transform: uppercase;
@@ -155,11 +143,11 @@
     }
 
     .doc-number {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      font-size: 8.5px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 9px;
       font-weight: 500;
       color: #777;
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
     /* QR Code de Autenticação 48px x 48px com Borda Dourada */
@@ -182,38 +170,30 @@
     }
 
     /* Seções Principais */
-    section {
-      page-break-inside: avoid;
-    }
-
     .section-title {
-      font-family: 'Cormorant Garamond', Baskerville, 'Times New Roman', Georgia, serif;
-      font-size: 12px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 13px;
       font-weight: 600;
       color: #8B1E23;
       text-transform: uppercase;
       letter-spacing: 1px;
       border-bottom: 1px solid #D4AF37;
-      padding-bottom: 2px;
-      margin-top: 6px;
-      margin-bottom: 5px;
+      padding-bottom: 3px;
+      margin-top: 10px;
+      margin-bottom: 8px;
     }
 
-    /* 1. Layout da Peça e Ficha Técnica */
-    .sec-specs {
-      flex: 0 0 auto;
-    }
-
+    /* Layout da Peça e Especificações */
     .piece-overview {
       display: flex;
-      gap: 12px;
-      margin-top: 4px;
+      gap: 15px;
+      margin-top: 10px;
     }
 
     .piece-image-container {
-      width: 38%;
+      width: 40%;
       border: 1px solid #DDD;
-      padding: 4px;
+      padding: 5px;
       background-color: #FFF;
       text-align: center;
       display: flex;
@@ -223,7 +203,7 @@
 
     .piece-image {
       width: 100%;
-      max-height: 140px;
+      max-height: 180px;
       object-fit: contain;
       display: block;
     }
@@ -231,8 +211,8 @@
     .piece-image-container.dual-image {
       display: flex;
       flex-direction: row;
-      gap: 5px;
-      padding: 3px;
+      gap: 6px;
+      padding: 4px;
     }
 
     .sub-image-box {
@@ -247,84 +227,70 @@
 
     .piece-image.dual {
       width: 100%;
-      max-height: 130px;
+      max-height: 160px;
       object-fit: contain;
     }
 
     .image-subcaption {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      font-size: 7.5px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 8px;
       font-weight: 600;
       color: #8B1E23;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
     .piece-specs {
-      width: 62%;
+      width: 60%;
     }
 
     table.specs-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9.5px;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10.5px;
     }
 
     table.specs-table td {
-      padding: 3px 5px;
+      padding: 4px 6px;
       border-bottom: 1px dashed #E0E0E0;
     }
 
     table.specs-table td.label {
-      font-size: 8.5px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 9.5px;
       font-weight: 600;
       color: #555;
-      width: 34%;
+      width: 35%;
     }
 
-    /* 2. Descrição & Contexto Histórico */
-    .sec-desc {
-      flex: 1 1 auto;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
+    /* Descrição Texto */
     .text-box {
-      font-family: 'Cormorant Garamond', Baskerville, 'Times New Roman', Georgia, serif;
-      font-size: 8.8px;
-      line-height: 1.35;
+      font-size: 10.5px;
+      line-height: 1.45;
       color: #333;
       background-color: #FFF;
       border: 1px solid #EAEAEA;
-      padding: 6px 8px;
+      padding: 8px 10px;
       border-radius: 2px;
       text-align: justify;
-      flex: 1 1 auto;
       white-space: pre-line;
     }
 
-    /* 3. Análise Mercadológica (SWOT) */
-    .sec-swot {
-      flex: 0 0 auto;
-    }
-
+    /* Caixas de Prós e Contras */
     .swot-container {
       display: flex;
-      gap: 10px;
-      margin-top: 4px;
+      gap: 12px;
+      margin-top: 5px;
     }
 
     .swot-box {
       width: 50%;
       background-color: #FFF;
       border: 1px solid #EAEAEA;
-      padding: 5px 8px;
-      font-size: 8.5px;
-      line-height: 1.3;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 8px;
+      font-size: 10px;
+      line-height: 1.4;
     }
 
     .swot-box.pros {
@@ -337,8 +303,8 @@
 
     .swot-title {
       font-weight: bold;
-      margin-bottom: 3px;
-      font-size: 9.5px;
+      margin-bottom: 4px;
+      font-size: 10.5px;
     }
 
     .swot-box.pros .swot-title { color: #2E7D32; }
@@ -346,38 +312,28 @@
 
     .swot-box ul {
       margin: 0;
-      padding-left: 14px;
+      padding-left: 15px;
     }
 
-    .swot-box li {
-      margin-bottom: 2px;
-    }
-
-    /* 4. Estimativa Preliminar de Mercado */
-    .sec-pricing {
-      flex: 0 0 auto;
-    }
-
+    /* Tabela de Precaver / Estimativa */
     table.pricing-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 8.5px;
-      margin-top: 4px;
+      font-size: 10px;
+      margin-top: 5px;
       background-color: #FFF;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     table.pricing-table th {
       background-color: #8B1E23;
       color: #FFF;
-      padding: 3.5px 6px;
+      padding: 5px;
       text-align: left;
-      font-size: 8.5px;
-      letter-spacing: 0.5px;
+      font-size: 9.5px;
     }
 
     table.pricing-table td {
-      padding: 3.5px 6px;
+      padding: 5px;
       border-bottom: 1px solid #EEE;
     }
 
@@ -388,14 +344,12 @@
 
     /* Rodapé / Isenção Legal */
     footer {
-      flex: 0 0 auto;
       border-top: 1px solid #D4AF37;
-      padding-top: 5px;
-      font-size: 7.5px;
+      padding-top: 8px;
+      font-size: 8.5px;
       color: #777;
-      line-height: 1.25;
+      line-height: 1.35;
       text-align: justify;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     .disclaimer {
@@ -406,8 +360,7 @@
       text-align: center;
       font-weight: bold;
       color: #8B1E23;
-      margin-top: 3px;
-      font-size: 8px;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -416,15 +369,15 @@
   <!-- Borda decorativa A4 -->
   <div class="page-border"></div>
 
-  <!-- Marca d'Água Centralizada (sem duplicação de Base64 no HTML) -->
-  <div class="watermark-bg" id="watermarkBg"></div>
+  <!-- Marca d'Água do Logo no Fundo -->
+  <img src="{{ logo_base64 }}" class="watermark" alt="Marca d'água Casa Antik">
 
   <div class="container">
     
-    <!-- Cabeçalho com Logotipo e QR Code de Autenticação -->
+    <!-- Cabeçalho -->
     <header>
       <div class="header-logo-container">
-        <img src="{{ logo_base64 }}" class="header-logo" id="headerLogo" alt="Logo Casa Antik">
+        <img src="{{ logo_base64 }}" class="header-logo" alt="Logo Casa Antik">
         <div>
           <h1 class="brand-title">Casa Antik</h1>
           <p class="brand-subtitle">Antiquário & Curadoria de Arte</p>
@@ -436,14 +389,16 @@
           <div class="doc-number">Ref: {{ referencia }}</div>
           <div class="doc-number">Data: {{ data }}</div>
         </div>
+        {% if qrcode_base64 %}
         <a href="https://www.antik.com.br/laudo/{{ hash_foto }}" target="_blank" class="qrcode-wrapper" title="Validar autenticidade do laudo">
           <img src="{{ qrcode_base64 }}" class="header-qrcode" alt="QR Code de Validação">
         </a>
+        {% endif %}
       </div>
     </header>
 
-    <!-- 1. Ficha Técnica do Item -->
-    <section class="sec-specs">
+    <!-- Visão Geral do Produto -->
+    <section>
       <div class="section-title">1. Ficha Técnica do Item</div>
       <div class="piece-overview">
         {% if imagem_verso_url %}
@@ -459,6 +414,7 @@
         </div>
         {% else %}
         <div class="piece-image-container">
+          <!-- Imagem dinâmica da peça -->
           <img src="{{ imagem_url }}" class="piece-image" alt="Fotografia da Peça">
         </div>
         {% endif %}
@@ -493,16 +449,16 @@
       </div>
     </section>
 
-    <!-- 2. Descrição & Contexto Histórico -->
-    <section class="sec-desc">
+    <!-- Descrição Descritiva e Histórica -->
+    <section>
       <div class="section-title">2. Descrição & Contexto Histórico</div>
       <div class="text-box">
         {{ descricao_contexto }}
       </div>
     </section>
 
-    <!-- 3. Análise Mercadológica (SWOT) -->
-    <section class="sec-swot">
+    <!-- Prós e Contras -->
+    <section>
       <div class="section-title">3. Análise Mercadológica (SWOT)</div>
       <div class="swot-container">
         <div class="swot-box pros">
@@ -524,8 +480,8 @@
       </div>
     </section>
 
-    <!-- 4. Estimativa Preliminar de Mercado -->
-    <section class="sec-pricing">
+    <!-- Cenário de Valoração -->
+    <section>
       <div class="section-title">4. Estimativa Preliminar de Mercado</div>
       <table class="pricing-table">
         <thead>
@@ -545,7 +501,7 @@
       </table>
     </section>
 
-    <!-- Rodapé / Isenção Legal -->
+    <!-- Isenção Legal e Rodapé -->
     <footer>
       <p class="disclaimer">
         <b>Aviso Legal:</b> Este documento possui caráter estritamente informativo e de apoio à divulgação comercial, elaborado com base em análise visual por visão computacional e pesquisa comparativa de fontes públicas de mercado. Não constitui laudo pericial presencial, exame de autenticidade ou certificado de procedência formal.
@@ -554,19 +510,6 @@
     </footer>
 
   </div>
-
-  <!-- Sincroniza marca d'água sem duplicar Base64 no arquivo -->
-  <script>
-    (function() {
-      try {
-        var logo = document.getElementById('headerLogo');
-        var wm = document.getElementById('watermarkBg');
-        if (logo && wm && logo.src) {
-          wm.style.backgroundImage = 'url("' + logo.src + '")';
-        }
-      } catch (e) {}
-    })();
-  </script>
 
 </body>
 </html>

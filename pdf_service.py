@@ -13,7 +13,7 @@ def get_logo_base64() -> str:
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
             from gemini_service import otimizar_imagem_base64
-            return otimizar_imagem_base64(f.read(), max_dim=250, quality=80)
+            return otimizar_imagem_base64(f.read(), max_dim=250, quality=88)
     return ""
 
 def gerar_qrcode_laudo(hash_foto: str) -> str:

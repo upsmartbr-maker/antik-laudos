@@ -34,31 +34,31 @@ class LaudoGeminiSchema(BaseModel):
     cenarios_precificacao: List[CenarioPrecificacao] = Field(description="3 cenários de precificação de mercado")
 
 
-def otimizar_imagem_base64(imagem_bytes: bytes, max_dim: int = 800, quality: int = 75) -> str:
+def otimizar_imagem_base64(imagem_bytes: bytes, max_dim: int = 1200, quality: int = 88) -> str:
     """
-    Comprime e redimensiona a imagem usando Pillow antes de converter em Base64 Data URI.
-    Reduz o tamanho de fotos de 1.2MB-15MB para menos de 90KB mantendo ótima nitidez visual.
+    Comprime e redimensiona a imagem usando Pillow em formato WebP de alta fidelidade antes de converter em Base64 Data URI.
+    WebP preserva detalhes finos de relevo metálico e nitidez sem artefatos.
     """
     try:
         img = Image.open(io.BytesIO(imagem_bytes))
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA" if "transparency" in img.info else "RGB")
         img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
         buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=quality, optimize=True)
-        return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("utf-8")
+        img.save(buffer, format="WEBP", quality=quality, method=6)
+        return "data:image/webp;base64," + base64.b64encode(buffer.getvalue()).decode("utf-8")
     except Exception as e:
-        print(f"[otimizar_imagem_base64] Erro ao otimizar imagem: {e}")
-        return "data:image/jpeg;base64," + base64.b64encode(imagem_bytes).decode("utf-8")
+        print(f"[otimizar_imagem_base64] Erro ao otimizar imagem em WebP: {e}")
+        return "data:image/webp;base64," + base64.b64encode(imagem_bytes).decode("utf-8")
 
 
 def get_logo_base64() -> str:
-    """Retorna o logotipo oficial Casa Antik otimizado em formato Base64 data URI (max 250px)."""
+    """Retorna o logotipo oficial Casa Antik otimizado em formato WebP Base64 data URI (max 250px)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "static", "Logo Antik.png")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
-            return otimizar_imagem_base64(f.read(), max_dim=250, quality=80)
+            return otimizar_imagem_base64(f.read(), max_dim=250, quality=88)
     return ""
 
 
@@ -108,7 +108,7 @@ def generate_mock_laudo(
     image_verso_mime: str = "image/png"
 ) -> Dict[str, Any]:
     """Gera um laudo de demonstração (fallback) quando a API Key do Gemini não está presente."""
-    b64_image = otimizar_imagem_base64(image_bytes, max_dim=800, quality=75)
+    b64_image = otimizar_imagem_base64(image_bytes, max_dim=1200, quality=88)
     
     if not referencia:
         if image_verso_bytes:
@@ -164,7 +164,7 @@ def generate_mock_laudo(
     }
 
     if image_verso_bytes:
-        res["imagem_verso_url"] = otimizar_imagem_base64(image_verso_bytes, max_dim=800, quality=75)
+        res["imagem_verso_url"] = otimizar_imagem_base64(image_verso_bytes, max_dim=1200, quality=88)
 
     return res
 
@@ -246,12 +246,12 @@ async def gerar_dados_laudo_gemini(
         hash_calculado = hashlib.sha256(image_bytes).hexdigest()[:10].upper()
     referencia_unica = f"#ANTK-2026-{hash_calculado}"
 
-    # Converte os buffers de imagem em Data URI Base64 otimizado com Pillow (<90KB)
-    b64_data_uri = otimizar_imagem_base64(image_bytes, max_dim=800, quality=75)
+    # Converte os buffers de imagem em Data URI Base64 otimizado com WebP via Pillow
+    b64_data_uri = otimizar_imagem_base64(image_bytes, max_dim=1200, quality=88)
 
     b64_verso_data_uri = None
     if image_verso_bytes:
-        b64_verso_data_uri = otimizar_imagem_base64(image_verso_bytes, max_dim=800, quality=75)
+        b64_verso_data_uri = otimizar_imagem_base64(image_verso_bytes, max_dim=1200, quality=88)
 
     # Se não houver API Key configurada, utiliza o gerador de demonstração em memória
     if not current_api_key:
