@@ -262,16 +262,48 @@ async def preview_laudo(
 
 @app.get("/", response_class=HTMLResponse, tags=["UI"])
 async def home_interface(request: Request):
-    """Interface interativa de teste para geração de laudos por foto (requer autenticação)."""
+    """
+    Interface principal privada para geração de laudos técnicos Casa Antik.
+    Exige autenticação ativa: Administrador ou Usuário com assinatura não expirada.
+    """
     user = auth_service.get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
 
-    index_path = os.path.join(BASE_DIR, "templates", "index.html")
-    if os.path.exists(index_path):
-        with open(index_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Casa Antik - Gerador de Laudos</h1>")
+    # 1. Se for administrador autenticado
+    if user.get("role") == "admin":
+        user_info = {
+            "email": user.get("sub", auth_service.ADMIN_EMAIL_DEFAULT),
+            "nome": "Administrador",
+            "is_admin": True
+        }
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={"user": user_info}
+        )
+
+    # 2. Se for usuário comum cadastrado, valida assinatura no Supabase / local
+    email_user = user.get("sub", "").strip().lower()
+    ativo, motivo, user_data = await supabase_service.verificar_usuario_ativo(email_user)
+    if not ativo:
+        # Sessão expirada ou inválida: remove cookie e redireciona para login com status 303
+        response = RedirectResponse(url="/login?erro=expirado", status_code=303)
+        response.delete_cookie(key=auth_service.USER_COOKIE_NAME)
+        return response
+
+    nome_exibicao = (user_data.get("nome") if user_data else None) or user.get("nome") or email_user
+    user_info = {
+        "email": email_user,
+        "nome": nome_exibicao,
+        "is_admin": False
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"user": user_info}
+    )
 
 
 # ==============================================================================
@@ -280,12 +312,17 @@ async def home_interface(request: Request):
 
 @app.get("/login", response_class=HTMLResponse, tags=["Autenticação"])
 @app.get("/login/", response_class=HTMLResponse, tags=["Autenticação"])
-async def user_login_page(request: Request):
+async def user_login_page(request: Request, erro: Optional[str] = None):
     """Exibe a tela de login para usuários clientes e antiquários."""
     user = auth_service.get_current_user(request)
-    if user:
+    if user and not erro:
         return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse(request=request, name="login.html", context={"erro": None})
+
+    msg_erro = None
+    if erro == "expirado":
+        msg_erro = "Sua assinatura ou período de acesso expirou. Entre em contato com a administração."
+
+    return templates.TemplateResponse(request=request, name="login.html", context={"erro": msg_erro})
 
 
 @app.post("/login", tags=["Autenticação"])
@@ -326,7 +363,8 @@ async def user_login_action(
     # Emite cookie de sessão para o usuário
     user_token = auth_service.create_user_token(
         email=email_limpo,
-        nome=user_data.get("nome", "") if user_data else ""
+        nome=user_data.get("nome", "") if user_data else "",
+        data_expiracao=user_data.get("data_expiracao", "") if user_data else ""
     )
     response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(
@@ -341,6 +379,7 @@ async def user_login_action(
 
 
 @app.get("/logout", tags=["Autenticação"])
+@app.post("/logout", tags=["Autenticação"])
 async def user_logout():
     """Encerra a sessão do usuário ou administrador e redireciona para a tela de login."""
     response = RedirectResponse(url="/login", status_code=303)
@@ -403,7 +442,8 @@ async def admin_login_action(
     if sucesso:
         user_token = auth_service.create_user_token(
             email=email_limpo,
-            nome=user_data.get("nome", "") if user_data else ""
+            nome=user_data.get("nome", "") if user_data else "",
+            data_expiracao=user_data.get("data_expiracao", "") if user_data else ""
         )
         response = RedirectResponse(url="/", status_code=303)
         response.set_cookie(

@@ -70,12 +70,13 @@ def get_current_admin(request: Request) -> Optional[dict]:
 USER_COOKIE_NAME = "antik_user_session"
 
 
-def create_user_token(email: str, nome: Optional[str] = None) -> str:
+def create_user_token(email: str, nome: Optional[str] = None, data_expiracao: Optional[str] = None) -> str:
     """Gera um token JWT assinado para usuários comuns do gerador de laudos."""
     now = int(time.time())
     payload = {
         "sub": email.strip().lower(),
         "nome": (nome or "").strip(),
+        "data_expiracao": str(data_expiracao or ""),
         "role": "user",
         "iat": now,
         "exp": now + SESSION_DURATION_SECONDS

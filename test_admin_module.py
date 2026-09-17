@@ -208,7 +208,10 @@ def test_admin_flow():
     # 5. Usuário acessa / com a sessão gerada
     r_home_ok = user_client.get("/", cookies={auth_service.USER_COOKIE_NAME: cookie_user})
     assert r_home_ok.status_code == 200, f"Esperado 200 em /, obtido {r_home_ok.status_code}"
-    print("✓ Sucesso: Usuário autenticado acessou / normalmente.")
+    assert "user-session-bar" in r_home_ok.text, "Barra de sessão não encontrada no template index.html!"
+    assert "Restaurador Antik" in r_home_ok.text or "restaurador@antik.com.br" in r_home_ok.text
+    assert "/logout" in r_home_ok.text, "Link de logout /logout não encontrado na interface!"
+    print("✓ Sucesso: Usuário autenticado acessou / normalmente com barra de sessão e botão de logout.")
 
     # 6. Usuário também consegue autenticar pela tela dedicada /login
     user_client_2 = TestClient(app)
@@ -220,6 +223,61 @@ def test_admin_flow():
     assert r_login_user_screen.status_code == 303, f"Esperado 303, obtido {r_login_user_screen.status_code}"
     assert r_login_user_screen.headers.get("location") == "/"
     print("✓ Sucesso: Usuário cadastrado também consegue logar via /login com sucesso total.")
+
+    print("\n=== TESTE 12: Validação de Proteção Estrita em GET / e Fluxo de Logout ===")
+    # 1. Usuário anônimo em GET / -> Redirecionado para /login
+    anon_test = TestClient(app)
+    r_anon_home = anon_test.get("/", follow_redirects=False)
+    assert r_anon_home.status_code == 303
+    assert r_anon_home.headers.get("location") == "/login"
+    print("✓ Rota raiz GET / bloqueia usuário anônimo e redireciona para /login com status 303.")
+
+    # 2. Administrador autenticado acessa GET / -> 200 OK com badge Admin
+    admin_auth_client.post("/admin/login", data={"email": admin_email, "password": admin_pass})
+    r_admin_home = admin_auth_client.get("/")
+    assert r_admin_home.status_code == 200
+    assert "user-session-bar" in r_admin_home.text
+    assert "Admin" in r_admin_home.text
+    assert "/logout" in r_admin_home.text
+    print("✓ Administrador autenticado visualiza GET / com identificador Admin e botão de logout.")
+
+    # 3. Usuário com assinatura expirada tenta acessar GET / -> Bloqueado e redirecionado para /login?erro=expirado
+    # Cadastra usuário expirado no passado
+    from datetime import date, timedelta
+    data_passada = (date.today() - timedelta(days=5)).isoformat()
+    supabase_service._USUARIOS_LOCAIS["expirado@antik.com.br"] = {
+        "id": "expirado@antik.com.br",
+        "nome": "Cliente Expirado",
+        "email": "expirado@antik.com.br",
+        "senha": "SenhaValida1",
+        "senha_plana": "SenhaValida1",
+        "tipo_validade": "Dias",
+        "quantidade_validade": 1,
+        "data_expiracao": data_passada
+    }
+    supabase_service._salvar_usuarios_locais()
+
+    token_expirado = auth_service.create_user_token(
+        email="expirado@antik.com.br",
+        nome="Cliente Expirado",
+        data_expiracao=data_passada
+    )
+    r_expired_home = anon_test.get("/", cookies={auth_service.USER_COOKIE_NAME: token_expirado}, follow_redirects=False)
+    assert r_expired_home.status_code == 303, f"Esperado 303 para usuário expirado, obtido {r_expired_home.status_code}"
+    assert "/login" in r_expired_home.headers.get("location")
+    print("✓ Usuário com período de assinatura expirado é sumariamente bloqueado e redirecionado para /login.")
+
+    # 4. Teste de GET /logout
+    r_get_logout = user_client.get("/logout", follow_redirects=False)
+    assert r_get_logout.status_code == 303
+    assert r_get_logout.headers.get("location") == "/login"
+    print("✓ GET /logout limpa cookies e redireciona para /login.")
+
+    # 5. Teste de POST /logout
+    r_post_logout = user_client.post("/logout", follow_redirects=False)
+    assert r_post_logout.status_code == 303
+    assert r_post_logout.headers.get("location") == "/login"
+    print("✓ POST /logout limpa cookies e redireciona para /login.")
 
     print("\n=======================================================")
     print(" TODOS OS TESTES PASSARAM COM SUCESSO ABSOLUTO! (100%) ")

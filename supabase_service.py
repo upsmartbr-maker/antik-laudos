@@ -604,3 +604,68 @@ async def autenticar_usuario_supabase(email: str, senha: str) -> tuple[bool, str
             return False, "E-mail ou senha incorretos.", None
 
     return False, "E-mail ou senha incorretos.", None
+
+
+async def verificar_usuario_ativo(email: str) -> tuple[bool, str, Optional[Dict[str, Any]]]:
+    """
+    Verifica se um usuário com o e-mail informado existe e está com a assinatura/período de acesso ativo.
+    Retorna (ativo: bool, mensagem: str, dados_usuario: Optional[Dict]).
+    """
+    email_limpo = (email or "").strip().lower()
+    if not email_limpo:
+        return False, "E-mail não fornecido.", None
+
+    hoje = date.today()
+
+    # 1. Consulta no Supabase se configurado
+    if is_supabase_configured():
+        url, key = get_supabase_config()
+        headers = get_supabase_headers(key)
+        for filtro in [f"email=ilike.{email_limpo}", f"email=eq.{email_limpo}"]:
+            rest_url = f"{url}/rest/v1/{TABLE_NAME}?{filtro}&select=*"
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(rest_url, headers=headers)
+                    if resp.status_code == 200:
+                        usuarios = resp.json()
+                        if usuarios and isinstance(usuarios, list) and len(usuarios) > 0:
+                            user_data = usuarios[0]
+                            data_exp = user_data.get("data_expiracao")
+                            if data_exp:
+                                try:
+                                    if "T" in str(data_exp):
+                                        dt_exp = datetime.fromisoformat(str(data_exp).replace("Z", "+00:00")).date()
+                                    else:
+                                        dt_exp = datetime.strptime(str(data_exp)[:10], "%Y-%m-%d").date()
+                                    if dt_exp < hoje:
+                                        return False, "Assinatura ou período de acesso expirado.", user_data
+                                except Exception as e:
+                                    print(f"[Supabase] Erro ao parsear data_expiracao: {e}")
+                            return True, "Usuário ativo.", user_data
+            except Exception as e:
+                print(f"[Supabase] Erro ao verificar usuário ativo no Supabase: {e}")
+
+    # 2. Fallback no Armazenamento Local (_USUARIOS_LOCAIS)
+    _carregar_usuarios_locais()
+    user_local = None
+    for k, v in _USUARIOS_LOCAIS.items():
+        if (str(k).strip().lower() == email_limpo or 
+            str(v.get("email", "")).strip().lower() == email_limpo):
+            user_local = v
+            break
+
+    if user_local:
+        data_exp = user_local.get("data_expiracao")
+        if data_exp:
+            try:
+                if "T" in str(data_exp):
+                    dt_exp = datetime.fromisoformat(str(data_exp).replace("Z", "+00:00")).date()
+                else:
+                    dt_exp = datetime.strptime(str(data_exp)[:10], "%Y-%m-%d").date()
+                if dt_exp < hoje:
+                    return False, "Assinatura ou período de acesso expirado.", user_local
+            except Exception as e:
+                print(f"[Supabase Local] Erro ao parsear data_expiracao: {e}")
+        return True, "Usuário ativo.", user_local
+
+    return False, "Usuário não encontrado.", None
