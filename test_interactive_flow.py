@@ -11,8 +11,17 @@ def test_interactive_flow():
     test_img = os.path.join("static", "Logo Antik.png")
     assert os.path.exists(test_img), "Imagem de teste ausente"
 
+    # Validação de segurança: chamada não autenticada bloqueada
+    resp_unauth = client.post("/preview-laudo")
+    assert resp_unauth.status_code == 401, "Deve exigir autenticação (401)"
+
+    # Autentica para o teste operacional
+    import auth_service
+    admin_email, admin_pass = auth_service.get_admin_credentials()
+    client.post("/admin/login", data={"email": admin_email, "password": admin_pass})
+
     # 1. Teste da rota /preview-laudo (HTML Response)
-    print("[1/2] Testando POST /preview-laudo com UploadFile...")
+    print("[1/2] Testando POST /preview-laudo com UploadFile autenticado...")
     with open(test_img, "rb") as f:
         resp_preview = client.post(
             "/preview-laudo",

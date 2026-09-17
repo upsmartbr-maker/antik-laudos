@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casa Antik - Assinatura Expirada</title>
+  
+  <!-- Tipografia Clássica Editorial -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --marfim-bg: #F7F4EE;
+      --marfim-card: #FDFCF9;
+      --bordo-nobre: #8B1E23;
+      --bordo-hover: #701418;
+      --dourado: #D4AF37;
+      --dourado-claro: #EED789;
+      --dourado-borda: rgba(212, 175, 55, 0.45);
+      --texto-escuro: #2A2322;
+      --texto-suave: #6E6260;
+      --zap-green: #25D366;
+      --zap-hover: #20BA5A;
+      --shadow-elegante: 0 18px 40px rgba(139, 30, 35, 0.08), 0 6px 18px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--marfim-bg);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.07) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(139, 30, 35, 0.06) 0%, transparent 50%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--texto-escuro);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .card {
+      background: var(--marfim-card);
+      border-radius: 14px;
+      padding: 48px 40px;
+      box-shadow: var(--shadow-elegante);
+      border: 1px solid var(--dourado-borda);
+      position: relative;
+      text-align: center;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      right: 6px;
+      bottom: 6px;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .brand-seal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FAF4E6 0%, #F5E8C9 100%);
+      border: 1.5px solid var(--dourado);
+      color: var(--bordo-nobre);
+      margin-bottom: 18px;
+      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.28);
+    }
+
+    .brand-seal svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--bordo-nobre);
+    }
+
+    .brand-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--bordo-nobre);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dourado);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--dourado), transparent);
+      margin: 0 auto 24px;
+      width: 80%;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(139, 30, 35, 0.08);
+      color: var(--bordo-nobre);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: 1px solid rgba(139, 30, 35, 0.2);
+      margin-bottom: 18px;
+    }
+
+    .status-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--bordo-nobre);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    .main-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--texto-escuro);
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .message {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--texto-suave);
+      margin-bottom: 26px;
+    }
+
+    .account-box {
+      background: #FAF7F0;
+      border: 1px dashed var(--dourado-borda);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .account-label {
+      color: var(--texto-suave);
+      font-weight: 500;
+    }
+
+    .account-email {
+      font-weight: 600;
+      color: var(--texto-escuro);
+      word-break: break-all;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-whatsapp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--zap-green) 0%, var(--zap-hover) 100%);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.28);
+      transition: all 0.25s ease;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-whatsapp:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+    }
+
+    .btn-whatsapp svg {
+      width: 20px;
+      height: 20px;
+      fill: #FFFFFF;
+    }
+
+    .btn-secondary {
+      display: inline-block;
+      text-decoration: none;
+      color: var(--bordo-nobre);
+      background: transparent;
+      border: 1px solid var(--dourado-borda);
+      font-weight: 600;
+      font-size: 13px;
+      padding: 11px 20px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(212, 175, 55, 0.1);
+      border-color: var(--dourado);
+    }
+
+    .btn-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--texto-suave);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s ease;
+    }
+
+    .btn-link:hover {
+      color: var(--bordo-nobre);
+    }
+
+    .public-guarantee {
+      margin-top: 26px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
+      font-size: 12px;
+      color: var(--texto-suave);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .public-guarantee svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--dourado);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="card">
+      
+      <!-- Brasão Casa Antik -->
+      <div class="brand-seal">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+        </svg>
+      </div>
+
+      <h1 class="brand-title">Casa Antik</h1>
+      <div class="brand-subtitle">Gerador de Laudos Periciais</div>
+      <div class="divider"></div>
+
+      <!-- Badge de Status -->
+      <div class="status-badge">
+        <span class="dot"></span>
+        Período Expirado
+      </div>
+
+      <h2 class="main-heading">Assinatura de Acesso Encerrada</h2>
+
+      <p class="message">
+        Identificamos que o prazo de validade da sua conta foi finalizado. Para continuar gerando novos laudos técnicos com validação pericial por inteligência artificial, renove seu acesso diretamente com nosso suporte.
+      </p>
+
+      {% if email %}
+      <div class="account-box">
+        <span class="account-label">Conta:</span>
+        <span class="account-email">{{ email }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Ações de Renovação -->
+      <div class="actions">
+        <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">
+          <svg viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.761.898 2.796.899 3.18 0 5.766-2.587 5.767-5.766.001-3.18-2.585-5.766-5.767-5.766zm9.969 5.767c0 5.485-4.484 9.969-9.969 9.969-1.748 0-3.385-.453-4.819-1.246l-5.212 1.367 1.393-5.086c-.886-1.488-1.362-3.21-1.362-5.004 0-5.485 4.484-9.969 9.969-9.969 5.485 0 9.969 4.484 9.969 9.969z"/>
+          </svg>
+          Renovar Acesso via WhatsApp
+        </a>
+
+        {% if admin_email %}
+        <a href="mailto:{{ admin_email }}?subject=Renovação%20de%20Acesso%20Casa%20Antik{% if email %}&body=Olá!%20Desejo%20renovar%20a%20assinatura%20da%20conta%20{{ email }}{% endif %}" class="btn-secondary">
+          Solicitar Renovação por E-mail
+        </a>
+        {% endif %}
+
+        <a href="/login" class="btn-link">Voltar para a Página de Login</a>
+      </div>
+
+      <!-- Garantia Pública de Consulta -->
+      <div class="public-guarantee">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <span>
+          <strong>Garantia Permanente:</strong> Todos os laudos já emitidos continuam 100% ativos e auditáveis publicamente no sistema de verificação por QR Code e Cloudflare R2.
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

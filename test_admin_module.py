@@ -264,8 +264,8 @@ def test_admin_flow():
     )
     r_expired_home = anon_test.get("/", cookies={auth_service.USER_COOKIE_NAME: token_expirado}, follow_redirects=False)
     assert r_expired_home.status_code == 303, f"Esperado 303 para usuário expirado, obtido {r_expired_home.status_code}"
-    assert "/login" in r_expired_home.headers.get("location")
-    print("✓ Usuário com período de assinatura expirado é sumariamente bloqueado e redirecionado para /login.")
+    assert "/assinatura-expirada" in r_expired_home.headers.get("location")
+    print("✓ Usuário com período de assinatura expirado é sumariamente bloqueado e redirecionado para /assinatura-expirada.")
 
     # 4. Teste de GET /logout
     r_get_logout = user_client.get("/logout", follow_redirects=False)
@@ -278,6 +278,57 @@ def test_admin_flow():
     assert r_post_logout.status_code == 303
     assert r_post_logout.headers.get("location") == "/login"
     print("✓ POST /logout limpa cookies e redireciona para /login.")
+
+    print("\n=== TESTE 13: Auditoria e Blindagem dos Endpoints de Ação & Rotas Públicas ===")
+    
+    # A) Tentativa de Login com Usuário Expirado -> Redirecionado para /assinatura-expirada
+    r_login_exp = anon_test.post(
+        "/login",
+        data={"email": "expirado@antik.com.br", "password": "SenhaValida1"},
+        follow_redirects=False
+    )
+    assert r_login_exp.status_code == 303, f"Esperado 303, obtido {r_login_exp.status_code}"
+    assert "/assinatura-expirada" in r_login_exp.headers.get("location")
+    assert "email=expirado" in r_login_exp.headers.get("location")
+    print("✓ Login de usuário expirado bloqueado e direcionado para /assinatura-expirada.")
+
+    # B) Chamadas diretas de API aos endpoints de ação SEM autenticação -> 401 Unauthorized
+    endpoints_protegidos = ["/gerar-laudo-foto", "/gerar-laudo", "/analisar-json", "/preview-laudo"]
+    for ep in endpoints_protegidos:
+        r_unauth_api = anon_test.post(ep)
+        assert r_unauth_api.status_code == 401, f"Esperado 401 para {ep} sem auth, obtido {r_unauth_api.status_code}"
+    print("✓ Todos os endpoints diretos (/gerar-laudo-foto, /gerar-laudo, /analisar-json, /preview-laudo) bloqueiam chamadas sem login com 401.")
+
+    # C) Chamadas diretas de API aos endpoints de ação COM cookie expirado -> 403 Forbidden
+    for ep in endpoints_protegidos:
+        r_exp_api = anon_test.post(ep, cookies={auth_service.USER_COOKIE_NAME: token_expirado})
+        assert r_exp_api.status_code == 403, f"Esperado 403 para {ep} com conta expirada, obtido {r_exp_api.status_code}"
+        assert "expirado" in r_exp_api.json().get("detail", "").lower() or "bloqueado" in r_exp_api.json().get("detail", "").lower()
+    print("✓ Todos os endpoints diretos bloqueiam usuários expirados em tempo real com status 403 Forbidden.")
+
+    # D) Rotas públicas de validação e QR Code permanecem 100% acessíveis e desprotegidas
+    r_val_busca = anon_test.get("/validar")
+    assert r_val_busca.status_code == 200, f"Esperado 200 em /validar, obtido {r_val_busca.status_code}"
+    assert "Consulta Pública" in r_val_busca.text or "Casa Antik" in r_val_busca.text
+
+    r_val_slash = anon_test.get("/validar/")
+    assert r_val_slash.status_code == 200
+
+    r_val_busca_cod = anon_test.get("/validar?codigo=ANTK-TESTE-999")
+    assert r_val_busca_cod.status_code == 200
+
+    # /validar/download não exige login (retorna 404 para código inexistente em vez de 401/403)
+    r_val_dl = anon_test.get("/validar/download?codigo=ANTK-TESTE-999")
+    assert r_val_dl.status_code == 404, f"Esperado 404 (arquivo não encontrado no R2) sem exigir login, obtido {r_val_dl.status_code}"
+    print("✓ Rotas públicas /validar e /validar/download permanecem 100% abertas sem exigir login.")
+
+    # E) Tela pública /assinatura-expirada carrega com 200 OK e contém link do WhatsApp
+    r_tela_exp = anon_test.get("/assinatura-expirada?email=restaurador@antik.com.br")
+    assert r_tela_exp.status_code == 200
+    assert "Assinatura de Acesso Encerrada" in r_tela_exp.text
+    assert "wa.me" in r_tela_exp.text
+    assert "restaurador@antik.com.br" in r_tela_exp.text
+    print("✓ Tela /assinatura-expirada exibe dados da conta e botão oficial de WhatsApp.")
 
     print("\n=======================================================")
     print(" TODOS OS TESTES PASSARAM COM SUCESSO ABSOLUTO! (100%) ")

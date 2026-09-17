@@ -3,7 +3,7 @@ import io
 import re
 from typing import Optional
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query, Response, Request
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query, Response, Request, Depends
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -84,15 +84,61 @@ async def health_check():
     }
 
 
-@app.post("/gerar-laudo-foto", tags=["Laudos"])
+async def exigir_usuario_ativo(request: Request) -> dict:
+    """
+    Dependência de segurança e controle de validade:
+    1. Administrador autenticado: acesso sempre liberado.
+    2. Usuário com sessão ativa: validação em tempo real no Supabase/cache.
+    3. Usuário com assinatura expirada: lança HTTP 403 Forbidden.
+    4. Não autenticado: lança HTTP 401 Unauthorized.
+    """
+    admin = auth_service.get_current_admin(request)
+    if admin:
+        return {
+            "email": admin.get("sub", auth_service.ADMIN_EMAIL_DEFAULT),
+            "nome": "Administrador",
+            "is_admin": True,
+            "role": "admin"
+        }
+
+    user_payload = auth_service.get_current_user(request)
+    if not user_payload:
+        raise HTTPException(
+            status_code=401,
+            detail="Acesso não autorizado. Por favor, efetue login para continuar."
+        )
+
+    email_user = user_payload.get("sub", "").strip().lower()
+    ativo, motivo, user_data = await supabase_service.verificar_usuario_ativo(email_user)
+
+    if not ativo:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Acesso bloqueado: {motivo} Renove sua assinatura para continuar gerando laudos."
+        )
+
+    nome_exibicao = (user_data.get("nome") if user_data else None) or user_payload.get("nome") or email_user
+    return {
+        "email": email_user,
+        "nome": nome_exibicao,
+        "is_admin": False,
+        "role": "user",
+        "user_data": user_data
+    }
+
+
+@app.post("/gerar-laudo-foto", dependencies=[Depends(exigir_usuario_ativo)], tags=["Laudos"])
 async def gerar_laudo_foto(
+    request: Request,
     file: UploadFile = File(...),
     file_verso: Optional[UploadFile] = File(None)
 ):
     """
     Endpoint para geração do Laudo Técnico em PDF a partir de fotos enviadas (Frente e Verso opcional).
     Processamento 100% em memória (buffer/io.BytesIO), compatível com ambientes Serverless (Vercel).
+    Exige autenticação ativa (admin ou usuário com validade não expirada).
     """
+    await exigir_usuario_ativo(request)
     if not file or not file.filename:
         raise HTTPException(status_code=400, detail="Por favor, selecione ao menos o arquivo de imagem da frente.")
 
@@ -145,8 +191,9 @@ async def gerar_laudo_foto(
         raise HTTPException(status_code=500, detail=f"Erro ao gerar laudo da foto: {str(e)}")
 
 
-@app.post("/gerar-laudo", tags=["Laudos"])
+@app.post("/gerar-laudo", dependencies=[Depends(exigir_usuario_ativo)], tags=["Laudos"])
 async def gerar_laudo(
+    request: Request,
     url: Optional[str] = Form(None),
     image_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
@@ -154,7 +201,9 @@ async def gerar_laudo(
 ):
     """
     Endpoint principal para geração do Laudo Técnico em PDF (100% em memória).
+    Exige autenticação ativa (admin ou usuário com validade não expirada).
     """
+    await exigir_usuario_ativo(request)
     image_bytes = None
     image_mime = None
     image_verso_bytes = None
@@ -216,14 +265,16 @@ async def gerar_laudo(
         raise HTTPException(status_code=500, detail=f"Erro na geração do laudo: {str(e)}")
 
 
-@app.post("/analisar-json", tags=["Laudos"])
+@app.post("/analisar-json", dependencies=[Depends(exigir_usuario_ativo)], tags=["Laudos"])
 async def analisar_json(
+    request: Request,
     url: Optional[str] = Form(None),
     image_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     file_verso: Optional[UploadFile] = File(None)
 ):
     """Retorna os dados brutos da análise da peça em formato JSON estrito gerado pelo Gemini (100% em memória)."""
+    await exigir_usuario_ativo(request)
     image_bytes = None
     image_mime = None
     image_verso_bytes = None
@@ -248,14 +299,16 @@ async def analisar_json(
     return data
 
 
-@app.post("/preview-laudo", response_class=HTMLResponse, tags=["Preview"])
+@app.post("/preview-laudo", dependencies=[Depends(exigir_usuario_ativo)], response_class=HTMLResponse, tags=["Preview"])
 async def preview_laudo(
+    request: Request,
     url: Optional[str] = Form(None),
     image_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     file_verso: Optional[UploadFile] = File(None)
 ):
     """Renderiza a visualização em HTML do laudo no navegador sem converter para PDF (100% em memória)."""
+    await exigir_usuario_ativo(request)
     image_bytes = None
     image_mime = None
     image_verso_bytes = None
@@ -319,8 +372,8 @@ async def home_interface(request: Request):
     email_user = user.get("sub", "").strip().lower()
     ativo, motivo, user_data = await supabase_service.verificar_usuario_ativo(email_user)
     if not ativo:
-        # Sessão expirada ou inválida: remove cookie e redireciona para login com status 303
-        response = RedirectResponse(url="/login?erro=expirado", status_code=303)
+        # Sessão expirada ou inválida: remove cookie e redireciona para a tela de assinatura expirada com status 303
+        response = RedirectResponse(url=f"/assinatura-expirada?email={email_user}&motivo=expirado", status_code=303)
         response.delete_cookie(key=auth_service.USER_COOKIE_NAME)
         return response
 
@@ -435,9 +488,42 @@ async def download_laudo_html(codigo: str = Query(...)):
 # AUTENTICAÇÃO DE USUÁRIOS (GERADOR DE LAUDOS)
 # ==============================================================================
 
+@app.get("/assinatura-expirada", response_class=HTMLResponse, tags=["Autenticação"])
+@app.get("/assinatura-expirada/", response_class=HTMLResponse, tags=["Autenticação"])
+async def assinatura_expirada_page(
+    request: Request,
+    email: Optional[str] = Query(None),
+    motivo: Optional[str] = Query(None)
+):
+    """
+    Tela pública amigável informando sobre assinatura expirada e fornecendo link direto para WhatsApp de suporte.
+    """
+    whatsapp_numero = os.getenv("WHATSAPP_CONTATO", "5511999999999").strip()
+    num_limpo = re.sub(r"\D", "", whatsapp_numero) or "5511999999999"
+    
+    msg_zap = "Olá! Gostaria de renovar minha assinatura do Gerador de Laudos Técnicos Casa Antik."
+    if email:
+        msg_zap += f" Meu e-mail de acesso é: {email}."
+    
+    import urllib.parse
+    whatsapp_url = f"https://wa.me/{num_limpo}?text={urllib.parse.quote(msg_zap)}"
+    admin_email = os.getenv("ADMIN_EMAIL", auth_service.ADMIN_EMAIL_DEFAULT)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="expirado.html",
+        context={
+            "email": email,
+            "motivo": motivo,
+            "whatsapp_url": whatsapp_url,
+            "admin_email": admin_email
+        }
+    )
+
+
 @app.get("/login", response_class=HTMLResponse, tags=["Autenticação"])
 @app.get("/login/", response_class=HTMLResponse, tags=["Autenticação"])
-async def user_login_page(request: Request, erro: Optional[str] = None):
+async def user_login_page(request: Request, erro: Optional[str] = None, email: Optional[str] = None):
     """Exibe a tela de login para usuários clientes e antiquários."""
     user = auth_service.get_current_user(request)
     if user and not erro:
@@ -445,9 +531,13 @@ async def user_login_page(request: Request, erro: Optional[str] = None):
 
     msg_erro = None
     if erro == "expirado":
-        msg_erro = "Sua assinatura ou período de acesso expirou. Entre em contato com a administração."
+        msg_erro = "Sua assinatura ou período de acesso expirou. Entre em contato com a administração para renovação."
 
-    return templates.TemplateResponse(request=request, name="login.html", context={"erro": msg_erro})
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"erro": msg_erro, "email_digitado": email or ""}
+    )
 
 
 @app.post("/login", tags=["Autenticação"])
@@ -478,10 +568,13 @@ async def user_login_action(
     # Consulta e autentica contra a tabela usuarios_antik do Supabase
     sucesso, msg, user_data = await supabase_service.autenticar_usuario_supabase(email_limpo, senha_limpa)
     if not sucesso:
+        if "expirad" in (msg or "").lower():
+            return RedirectResponse(url=f"/assinatura-expirada?email={email_limpo}", status_code=303)
+
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={"erro": msg},
+            context={"erro": msg, "email_digitado": email_limpo},
             status_code=401
         )
 
@@ -582,7 +675,10 @@ async def admin_login_action(
         return response
 
     # 3. Caso não seja admin nem usuário válido (ou expirado)
-    erro_msg = msg if (msg and "expirado" in msg.lower()) else "E-mail ou senha incorretos."
+    if "expirad" in (msg or "").lower():
+        return RedirectResponse(url=f"/assinatura-expirada?email={email_limpo}", status_code=303)
+
+    erro_msg = "E-mail ou senha incorretos."
     return templates.TemplateResponse(
         request=request,
         name="admin_login.html",

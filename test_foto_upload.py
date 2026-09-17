@@ -10,6 +10,15 @@ def test_upload_foto_endpoint():
     
     client = TestClient(app)
     
+    # Validação de segurança: chamada não autenticada bloqueada
+    resp_unauth = client.post("/gerar-laudo-foto")
+    assert resp_unauth.status_code == 401, "Endpoint /gerar-laudo-foto deve exigir autenticação (401)"
+
+    # Autentica como Administrador
+    import auth_service
+    admin_email, admin_pass = auth_service.get_admin_credentials()
+    client.post("/admin/login", data={"email": admin_email, "password": admin_pass})
+
     # Usar imagem estática de teste
     test_img = os.path.join("static", "Logo Antik.png")
     assert os.path.exists(test_img), "Imagem estática de teste não encontrada"
