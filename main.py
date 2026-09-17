@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from gemini_service import gerar_dados_laudo_gemini
+from gemini_service import gerar_dados_laudo_gemini, otimizar_imagem_base64, get_logo_base64
 from pdf_service import render_html_laudo, convert_html_to_pdf
 import auth_service
 import supabase_service

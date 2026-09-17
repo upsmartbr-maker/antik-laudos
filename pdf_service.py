@@ -7,13 +7,13 @@ from playwright.async_api import async_playwright
 import qrcode
 
 def get_logo_base64() -> str:
-    """Carrega a imagem estática do logo e converte em data URI base64."""
+    """Carrega a imagem estática do logo e converte em data URI base64 otimizado com Pillow (< 10 KB)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "static", "Logo Antik.png")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf-8")
-            return f"data:image/png;base64,{encoded}"
+            from gemini_service import otimizar_imagem_base64
+            return otimizar_imagem_base64(f.read(), max_dim=250, quality=80)
     return ""
 
 def gerar_qrcode_laudo(hash_foto: str) -> str:

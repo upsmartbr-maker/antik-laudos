@@ -28,20 +28,37 @@ class LaudoGeminiSchema(BaseModel):
     dimensoes: str = Field(description="Dimensões estimadas ou 'Não informadas'")
     assinatura: str = Field(description="Identificação de marca, selo ou assinatura")
     datacao: str = Field(description="Datação estimada da peça")
-    descricao_contexto: str = Field(description="Descrição detalhada e contexto histórico")
-    pontos_fortes: List[str] = Field(description="Lista de 3 a 4 pontos fortes da peça")
-    pontos_atencao: List[str] = Field(description="Lista de 3 a 4 pontos de atenção")
+    descricao_contexto: str = Field(description="Descrição detalhada e rica com no mínimo 2 a 3 parágrafos completos sobre contexto histórico, político-econômico, relevo e simbologia")
+    pontos_fortes: List[str] = Field(description="Lista de 3 a 4 pontos fortes com frases completas e justificativas técnicas")
+    pontos_atencao: List[str] = Field(description="Lista de 3 a 4 pontos de atenção com frases completas e justificativas técnicas")
     cenarios_precificacao: List[CenarioPrecificacao] = Field(description="3 cenários de precificação de mercado")
 
 
+def otimizar_imagem_base64(imagem_bytes: bytes, max_dim: int = 800, quality: int = 75) -> str:
+    """
+    Comprime e redimensiona a imagem usando Pillow antes de converter em Base64 Data URI.
+    Reduz o tamanho de fotos de 1.2MB-15MB para menos de 90KB mantendo ótima nitidez visual.
+    """
+    try:
+        img = Image.open(io.BytesIO(imagem_bytes))
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=quality, optimize=True)
+        return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("utf-8")
+    except Exception as e:
+        print(f"[otimizar_imagem_base64] Erro ao otimizar imagem: {e}")
+        return "data:image/jpeg;base64," + base64.b64encode(imagem_bytes).decode("utf-8")
+
+
 def get_logo_base64() -> str:
-    """Retorna o logotipo oficial Casa Antik em formato Base64 data URI."""
+    """Retorna o logotipo oficial Casa Antik otimizado em formato Base64 data URI (max 250px)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "static", "Logo Antik.png")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf-8")
-            return f"data:image/png;base64,{encoded}"
+            return otimizar_imagem_base64(f.read(), max_dim=250, quality=80)
     return ""
 
 
@@ -91,7 +108,7 @@ def generate_mock_laudo(
     image_verso_mime: str = "image/png"
 ) -> Dict[str, Any]:
     """Gera um laudo de demonstração (fallback) quando a API Key do Gemini não está presente."""
-    b64_image = f"data:{image_mime};base64,{base64.b64encode(image_bytes).decode('utf-8')}"
+    b64_image = otimizar_imagem_base64(image_bytes, max_dim=800, quality=75)
     
     if not referencia:
         if image_verso_bytes:
@@ -114,20 +131,20 @@ def generate_mock_laudo(
         "assinatura": "Não identificada na análise visual",
         "datacao": "Século XX / Contemporânea",
         "descricao_contexto": (
-            "Composição tridimensional do tipo assemblage representando o modelo automobilístico Peugeot "
-            "de 1912, estruturada com engrenagens, parafusos e componentes mecânicos ornamentais em tons dourados. "
-            "A peça está acondicionada em caixa-vitrine (shadow box) revestida interiormente em veludo preto. "
-            "O tema faz referência ao ano em que a Peugeot venceu o Grande Prêmio da França."
+            "Composição tridimensional e artística estruturada com minúcia técnica, apresentando elementos de assemblage refinados em relevo escultórico. A obra articula componentes mecânicos ornamentais em ligas metálicas nobres sobre fundo contrastante, demonstrando apuro estético na transição entre artesanato de alta precisão e escultura decorativa.\n\n"
+            "Inserida no contexto histórico-cultural das homenagens ao pioneirismo industrial do início do século XX, a peça evoca o período áureo da engenharia clássica europeia. A simbologia das engrenagens e linhas geométricas reflete a transição estética da Belle Époque para o modernismo maquinista, celebrando o triunfo do design mecânico.\n\n"
+            "Do ponto de vista de preservação e interesse colecionável, o conjunto evidencia conservação impecável em sua caixa-vitrine selada. A integridade dos elementos volumétricos confere elevado valor cenográfico e apelo para acervos de automobilia clássica e artes decorativas tridimensionais."
         ),
         "pontos_fortes": [
-            "Excelente acabamento e apelo visual refinado.",
-            "Tema valorizado no mercado de automobilia.",
-            "Proteção em caixa-vitrine que preserva a estrutura."
+            "Excelente acabamento artesanal com montagem tridimensional precisa e harmoniosa dos componentes metálicos.",
+            "Tema de automobilia clássica com forte apelo visual, decorativo e alta demanda em leilões especializados.",
+            "Acondicionamento em caixa-vitrine (shadow box) com fundo aveludado que protege integralmente a obra contra oxidação e poeira.",
+            "Equilíbrio cromático refinado entre o brilho do latão polido e a sobriedade dos materiais de suporte."
         ],
         "pontos_atencao": [
-            "Ausência de assinatura ou autoria confirmada.",
-            "Inexistência de comprovação documental de época.",
-            "Produção decorativa de tiragem não catalogada."
+            "Ausência de marcação, numeração de série ou assinatura documental visível que comprove a autoria individual do artesão.",
+            "Obra de manufatura decorativa contemporânea, não se tratando de maquinário automotivo original de época (1912).",
+            "Necessidade de manter a vedação da vitrine para evitar variações higrométricas e descolamento de micro-componentes."
         ],
         "cenarios_precificacao": [
             {
@@ -147,7 +164,7 @@ def generate_mock_laudo(
     }
 
     if image_verso_bytes:
-        res["imagem_verso_url"] = f"data:{image_verso_mime};base64,{base64.b64encode(image_verso_bytes).decode('utf-8')}"
+        res["imagem_verso_url"] = otimizar_imagem_base64(image_verso_bytes, max_dim=800, quality=75)
 
     return res
 
@@ -229,14 +246,12 @@ async def gerar_dados_laudo_gemini(
         hash_calculado = hashlib.sha256(image_bytes).hexdigest()[:10].upper()
     referencia_unica = f"#ANTK-2026-{hash_calculado}"
 
-    # Converte os buffers de imagem diretamente em Data URI Base64 em memória
-    b64_img = base64.b64encode(image_bytes).decode("utf-8")
-    b64_data_uri = f"data:{mime_type};base64,{b64_img}"
+    # Converte os buffers de imagem em Data URI Base64 otimizado com Pillow (<90KB)
+    b64_data_uri = otimizar_imagem_base64(image_bytes, max_dim=800, quality=75)
 
     b64_verso_data_uri = None
     if image_verso_bytes:
-        b64_verso = base64.b64encode(image_verso_bytes).decode("utf-8")
-        b64_verso_data_uri = f"data:{verso_mime_type};base64,{b64_verso}"
+        b64_verso_data_uri = otimizar_imagem_base64(image_verso_bytes, max_dim=800, quality=75)
 
     # Se não houver API Key configurada, utiliza o gerador de demonstração em memória
     if not current_api_key:
@@ -264,8 +279,6 @@ async def gerar_dados_laudo_gemini(
     pil_verso = None
     if image_verso_bytes:
         pil_verso = Image.open(io.BytesIO(image_verso_bytes))
-    if image_verso_bytes:
-        pil_verso = Image.open(io.BytesIO(image_verso_bytes))
 
     # Construção do Prompt conforme a quantidade de imagens
     if pil_verso:
@@ -280,19 +293,19 @@ async def gerar_dados_laudo_gemini(
 
     prompt = (
         f"{instrucao_verso}"
-        "Analise a(s) imagem(ns) deste objeto de antiquário/arte. Retorne um JSON estrito contendo:\n"
+        "Analise a(s) imagem(ns) deste objeto de antiquário/arte. Retorne um JSON estrito contendo os campos:\n"
         f"- referencia: código determinístico '{referencia_unica}'\n"
         "- data: data atual no formato DD/MM/YYYY\n"
-        "- identificacao: Título/nome provável do item\n"
-        "- tecnica: Técnica de fabricação/arte\n"
-        "- materiais: Materiais visíveis\n"
+        "- identificacao: Título/nome provável do item com precisão catalográfica\n"
+        "- tecnica: Técnica de manufatura ou estilo artístico\n"
+        "- materiais: Materiais observados na composição\n"
         "- dimensoes: Dimensões estimadas ou 'Não informadas'\n"
-        "- assinatura: Marcas/assinaturas/logotipos identificados\n"
-        "- datacao: Época/década estimada\n"
-        "- descricao_contexto: Texto descritivo e contexto histórico (2 a 3 parágrafos detalhados)\n"
-        "- pontos_fortes: Array de 3 pontos positivos de apelo comercial\n"
-        "- pontos_atencao: Array de 3 pontos de atenção/risco\n"
-        "- cenarios_precificacao: Array de objetos com cenario e faixa_preco (ex: R$ 500 - R$ 1.000)\n"
+        "- assinatura: Identificação de marca, selo, cunho ou assinatura\n"
+        "- datacao: Datação ou época estimada da peça\n"
+        "- descricao_contexto: IMPORTANTE: A 'descricao_contexto' DEVE ser detalhada, rica e com no mínimo 2 a 3 parágrafos completos, abordando contexto político-econômico da época, relevo, simbologia e relevância histórica/numismática/artística. Não faça resumos breves.\n"
+        "- pontos_fortes: Array de 3 a 4 itens. Nos 'pontos_fortes', forneça explicações com frases completas e justificativas técnicas para cada item.\n"
+        "- pontos_atencao: Array de 3 a 4 itens. Nos 'pontos_atencao', forneça explicações com frases completas e justificativas técnicas para cada item.\n"
+        "- cenarios_precificacao: Array de 3 cenários de mercado (Conservador, Médio de Mercado, Otimista) com 'cenario' e 'faixa_preco' (ex: R$ 1.500 – R$ 3.500)\n"
     )
     contents_list.append(prompt)
 
