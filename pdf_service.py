@@ -1,8 +1,10 @@
 import os
+import io
 import base64
 from typing import Dict, Any
 from jinja2 import Environment, FileSystemLoader
 from playwright.async_api import async_playwright
+import qrcode
 
 def get_logo_base64() -> str:
     """Carrega a imagem estática do logo e converte em data URI base64."""
@@ -14,6 +16,27 @@ def get_logo_base64() -> str:
             return f"data:image/png;base64,{encoded}"
     return ""
 
+def gerar_qrcode_laudo(hash_foto: str) -> str:
+    """Gera um QR Code em Data URI base64 direcionando para a URL de validação do laudo."""
+    target_url = f"https://www.antik.com.br/laudo/{hash_foto}"
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=4,
+            border=1,
+        )
+        qr.add_data(target_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="#2A2322", back_color="#FFFFFF")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        encoded = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return f"data:image/png;base64,{encoded}"
+    except Exception as e:
+        print(f"[pdf_service] Erro ao gerar QR Code: {e}")
+        return ""
+
 def render_html_laudo(data: Dict[str, Any]) -> str:
     """Renderiza o template HTML do laudo usando Jinja2."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,8 +46,17 @@ def render_html_laudo(data: Dict[str, Any]) -> str:
     
     logo_b64 = data.get("logo_base64") or get_logo_base64()
     
+    ref = data.get("referencia", "#ANTK-2026-0000")
+    hash_foto = data.get("hash_foto")
+    if not hash_foto:
+        hash_foto = ref.replace("#ANTK-2026-", "").replace("#", "") or "ANTK2026"
+        
+    qrcode_b64 = data.get("qrcode_base64") or gerar_qrcode_laudo(hash_foto)
+
     html_content = template.render(
-        referencia=data.get("referencia", "#ANTK-2026-0000"),
+        referencia=ref,
+        hash_foto=hash_foto,
+        qrcode_base64=qrcode_b64,
         data=data.get("data", ""),
         identificacao=data.get("identificacao", ""),
         tecnica=data.get("tecnica", ""),

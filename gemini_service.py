@@ -101,9 +101,11 @@ def generate_mock_laudo(
         referencia = f"#ANTK-2026-{hash_calc}"
 
     today_str = datetime.date.today().strftime("%d/%m/%Y")
+    hash_foto = referencia.replace("#ANTK-2026-", "").replace("#", "")
 
     res = {
         "referencia": referencia,
+        "hash_foto": hash_foto,
         "data": today_str,
         "identificacao": '"Peugeot 1912" (Plaqueta Original)',
         "tecnica": "Assemblage / Relevo Tridimensional",
@@ -320,6 +322,7 @@ async def gerar_dados_laudo_gemini(
             data = json.loads(response.text)
             # Garantir a referência única calculada por hash determinístico
             data["referencia"] = referencia_unica
+            data["hash_foto"] = hash_calculado
             # Imagem frontal embutida em Base64 Data URI
             data["imagem_url"] = b64_data_uri
             if b64_verso_data_uri:
