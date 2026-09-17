@@ -390,7 +390,7 @@
           <div class="doc-number">Data: {{ data }}</div>
         </div>
         {% if qrcode_base64 %}
-        <a href="https://www.antik.com.br/laudo/{{ hash_foto }}" target="_blank" class="qrcode-wrapper" title="Validar autenticidade do laudo">
+        <a href="{{ validacao_url }}" target="_blank" class="qrcode-wrapper" title="Validar autenticidade do laudo">
           <img src="{{ qrcode_base64 }}" class="header-qrcode" alt="QR Code de Validação">
         </a>
         {% endif %}

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if modo == 'sucesso' %}Laudo Autêntico - {{ codigo }}{% elif modo == 'nao_encontrado' %}Laudo Não Encontrado{% else %}Validação de Laudos Técnicos{% endif %} | Casa Antik</title>
+  
+  <!-- Tipografia Clássica Editorial -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --marfim-bg: #F7F4EE;
+      --marfim-card: #FDFCF9;
+      --bordo-nobre: #8B1E23;
+      --bordo-hover: #701418;
+      --bordo-light: rgba(139, 30, 35, 0.08);
+      --dourado: #D4AF37;
+      --dourado-claro: #EED789;
+      --dourado-borda: rgba(212, 175, 55, 0.45);
+      --verde-autentico: #1B5E20;
+      --verde-bg: #E8F5E9;
+      --verde-borda: #81C784;
+      --texto-escuro: #2A2322;
+      --texto-suave: #6E6260;
+      --texto-muted: #8E8280;
+      --shadow-elegante: 0 16px 40px rgba(139, 30, 35, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 10px 30px rgba(42, 35, 34, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--marfim-bg);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(139, 30, 35, 0.06) 0%, transparent 50%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--texto-escuro);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px 60px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* Cabeçalho da Marca */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .brand-seal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FAF4E6 0%, #F5E8C9 100%);
+      border: 1.5px solid var(--dourado);
+      color: var(--bordo-nobre);
+      margin-bottom: 16px;
+      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.28);
+    }
+
+    .brand-seal svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--bordo-nobre);
+    }
+
+    .brand-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-size: 14px;
+      color: var(--texto-suave);
+      margin-top: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Card Principal */
+    .main-card {
+      background: var(--marfim-card);
+      border-radius: 14px;
+      padding: 38px 34px;
+      box-shadow: var(--shadow-elegante);
+      border: 1px solid var(--dourado-borda);
+      position: relative;
+    }
+
+    .main-card::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      right: 6px;
+      bottom: 6px;
+      border: 1px solid rgba(212, 175, 55, 0.22);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    /* Formulário de Busca */
+    .search-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      border-radius: 8px;
+      background: #FFFFFF;
+      color: var(--texto-escuro);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--bordo-nobre);
+      box-shadow: 0 0 0 3px rgba(139, 30, 35, 0.12);
+    }
+
+    .search-input::placeholder {
+      color: var(--texto-muted);
+      font-size: 14px;
+    }
+
+    .btn-search {
+      background: linear-gradient(135deg, var(--bordo-nobre) 0%, var(--bordo-hover) 100%);
+      color: #FFFFFF;
+      border: 1px solid var(--bordo-nobre);
+      border-radius: 8px;
+      padding: 0 24px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(139, 30, 35, 0.2);
+    }
+
+    .btn-search:hover {
+      background: linear-gradient(135deg, #701418 0%, #580e12 100%);
+      box-shadow: 0 6px 16px rgba(139, 30, 35, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* Estado: Autêntico Encontrado */
+    .status-badge-container {
+      text-align: center;
+      margin: 10px 0 24px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #FAF7ED 0%, #F5E8C9 100%);
+      border: 1.5px solid var(--dourado);
+      border-radius: 30px;
+      padding: 10px 24px;
+      box-shadow: 0 4px 16px rgba(212, 175, 55, 0.22);
+    }
+
+    .status-badge svg {
+      width: 22px;
+      height: 22px;
+      fill: var(--verde-autentico);
+    }
+
+    .status-badge-text {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Detalhes do Laudo */
+    .laudo-info-box {
+      background: #FFFFFF;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 10px;
+      padding: 22px;
+      margin-bottom: 26px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed rgba(212, 175, 55, 0.2);
+      font-size: 14px;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .info-label {
+      color: var(--texto-suave);
+      font-weight: 500;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--texto-escuro);
+    }
+
+    .info-value.codigo-destaque {
+      font-family: 'Courier New', Courier, monospace;
+      color: var(--bordo-nobre);
+      font-size: 16px;
+      font-weight: 700;
+      background: rgba(139, 30, 35, 0.06);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .info-value.badge-status {
+      color: var(--verde-autentico);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-value.badge-status::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--verde-autentico);
+    }
+
+    /* Botões de Ação */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .btn-action-primary {
+      background: linear-gradient(135deg, var(--bordo-nobre) 0%, var(--bordo-hover) 100%);
+      color: #FFFFFF;
+      text-decoration: none;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--bordo-nobre);
+      box-shadow: 0 4px 12px rgba(139, 30, 35, 0.2);
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .btn-action-primary:hover {
+      background: linear-gradient(135deg, #701418 0%, #580e12 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(139, 30, 35, 0.3);
+    }
+
+    .btn-action-secondary {
+      background: #FFFFFF;
+      color: var(--bordo-nobre);
+      text-decoration: none;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1.5px solid var(--dourado);
+      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .btn-action-secondary:hover {
+      background: #FAF7ED;
+      border-color: var(--bordo-nobre);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+    }
+
+    /* Estado: Não Encontrado */
+    .not-found-box {
+      text-align: center;
+      padding: 24px 16px;
+      background: #FFFBFB;
+      border: 1px solid rgba(139, 30, 35, 0.2);
+      border-radius: 10px;
+      margin-bottom: 24px;
+    }
+
+    .not-found-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(139, 30, 35, 0.08);
+      color: var(--bordo-nobre);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .not-found-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      margin-bottom: 8px;
+    }
+
+    .not-found-desc {
+      font-size: 14px;
+      color: var(--texto-suave);
+      line-height: 1.5;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .not-found-desc code {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      background: rgba(139, 30, 35, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Estado: Página Inicial Limpa */
+    .welcome-box {
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .welcome-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--bordo-nobre);
+      margin-bottom: 10px;
+    }
+
+    .welcome-desc {
+      font-size: 14px;
+      color: var(--texto-suave);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    /* Selos de Segurança */
+    .security-badges {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .sec-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .sec-badge svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--dourado);
+    }
+
+    .sec-badge-text {
+      font-size: 11.5px;
+      color: var(--texto-suave);
+      font-weight: 500;
+    }
+
+    /* Footer */
+    .page-footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--texto-muted);
+      line-height: 1.6;
+    }
+
+    .page-footer a {
+      color: var(--bordo-nobre);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .page-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 580px) {
+      body {
+        padding: 24px 14px 40px;
+      }
+      .main-card {
+        padding: 28px 20px;
+      }
+      .search-row {
+        flex-direction: column;
+      }
+      .btn-search {
+        padding: 12px;
+      }
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+      .security-badges {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Cabeçalho Institucional -->
+    <header class="brand-header">
+      <div class="brand-seal" title="Casa Antik 1888">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+        </svg>
+      </div>
+      <h1 class="brand-title">Casa Antik</h1>
+      <p class="brand-subtitle">Validação Oficial de Autenticidade e Laudos Periciais</p>
+    </header>
+
+    <!-- Card Principal -->
+    <main class="main-card">
+
+      <!-- Barra de Busca de Laudo -->
+      <form action="/validar" method="GET" class="search-form">
+        <div class="search-row">
+          <input 
+            type="text" 
+            name="codigo" 
+            class="search-input" 
+            placeholder="Digite o código (Ex: ANTK-2026-F9A8B7C6)..."
+            value="{{ codigo_digitado or '' }}"
+            required
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button type="submit" class="btn-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Consultar
+          </button>
+        </div>
+      </form>
+
+      {% if modo == 'sucesso' %}
+      <!-- ESTADO: LAUDO OFICIAL ENCONTRADO & AUTÊNTICO -->
+      <div class="status-badge-container">
+        <div class="status-badge">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <span class="status-badge-text">Laudo Oficial Autêntico</span>
+        </div>
+      </div>
+
+      <div class="laudo-info-box">
+        <div class="info-row">
+          <span class="info-label">Código de Referência:</span>
+          <span class="info-value codigo-destaque">#{{ codigo }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status da Certificação:</span>
+          <span class="info-value badge-status">Registrado e Válido</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Armazenamento Criptográfico:</span>
+          <span class="info-value">Cloudflare R2 Object Storage</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Emissor:</span>
+          <span class="info-value">Casa Antik • Peritagem e Avaliação</span>
+        </div>
+      </div>
+
+      <!-- Botões de Ação Exigidos -->
+      <div class="actions-grid">
+        <a href="{{ r2_url }}" target="_blank" rel="noopener noreferrer" class="btn-action-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          Visualizar Laudo Completo
+        </a>
+
+        <a href="/validar/download?codigo={{ codigo }}" class="btn-action-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Baixar Arquivo HTML
+        </a>
+      </div>
+
+      {% elif modo == 'nao_encontrado' %}
+      <!-- ESTADO: CÓDIGO NÃO LOCALIZADO -->
+      <div class="not-found-box">
+        <div class="not-found-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h2 class="not-found-title">Laudo Não Encontrado</h2>
+        <p class="not-found-desc">
+          O código informado <code>{{ codigo_digitado }}</code> não foi encontrado no acervo oficial da Casa Antik.
+        </p>
+        <p class="not-found-desc" style="margin-top: 10px; font-size: 13px; color: var(--texto-muted);">
+          Certifique-se de que o código de referência foi digitado exatamente conforme impresso no laudo ou contate nosso suporte para verificação pericial.
+        </p>
+      </div>
+
+      {% else %}
+      <!-- ESTADO: ACESSO SEM PARÂMETROS (/validar) -->
+      <div class="welcome-box">
+        <h2 class="welcome-title">Consulta Pública de Autenticidade</h2>
+        <p class="welcome-desc">
+          Digite o código de referência impresso no cabeçalho do laudo técnico (ou escaneie o QR Code original) para conferir a legitimidade do documento emitido pela Casa Antik diretamente em nosso repositório imutável.
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- Selos de Segurança e Integridade -->
+      <div class="security-badges">
+        <div class="sec-badge">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+          </svg>
+          <span class="sec-badge-text">Repositório Criptográfico R2</span>
+        </div>
+        <div class="sec-badge">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/>
+          </svg>
+          <span class="sec-badge-text">Acervo Oficial Imutável</span>
+        </div>
+        <div class="sec-badge">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+          </svg>
+          <span class="sec-badge-text">Certificação de Procedência</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="page-footer">
+      <p>© Casa Antik. Todos os direitos reservados.</p>
+      <p>Autenticação digital pericial em conformidade com os padrões de custódia e preservação.</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

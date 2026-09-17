@@ -69,7 +69,7 @@ def test_template_restoration():
     
     # 3. QR Code e links de autenticação
     assert 'class="header-qrcode"' in html, "Tag do QR Code não encontrada!"
-    assert 'https://www.antik.com.br/laudo/F9A8B7C6' in html, "URL do QR Code não encontrada!"
+    assert 'validar?codigo=ANTK-2026-F9A8B7C6' in html, "URL do QR Code não encontrada!"
     print("✓ Sucesso: QR Code presente no cabeçalho com URL correta de validação.")
     
     print("\n=======================================================")

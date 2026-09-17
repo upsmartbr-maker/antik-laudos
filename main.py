@@ -1,5 +1,6 @@
 import os
 import io
+import re
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query, Response, Request
@@ -11,6 +12,7 @@ from pydantic import BaseModel
 
 from gemini_service import gerar_dados_laudo_gemini, otimizar_imagem_base64, get_logo_base64
 from pdf_service import render_html_laudo, convert_html_to_pdf
+from services.r2_storage import upload_laudo_r2, verificar_laudo_existe, obter_laudo_r2
 import auth_service
 import supabase_service
 
@@ -113,9 +115,19 @@ async def gerar_laudo_foto(
 
         # Renderização Jinja2 e conversão em PDF A4
         html_rendered = render_html_laudo(laudo_json)
-        pdf_bytes = await convert_html_to_pdf(html_rendered)
 
-        ref_clean = laudo_json.get("referencia", "#ANTK-2026").replace("#", "").replace("/", "-")
+        ref_clean = laudo_json.get("referencia", "#ANTK-2026").replace("#", "").replace("/", "-").strip()
+
+        # Upload automático para o Cloudflare R2
+        try:
+            upload_laudo_r2(html_rendered, ref_clean)
+            hash_foto = laudo_json.get("hash_foto")
+            if hash_foto and hash_foto != ref_clean:
+                upload_laudo_r2(html_rendered, hash_foto)
+        except Exception as r2_err:
+            print(f"[main] Aviso no upload R2 (/gerar-laudo-foto): {r2_err}")
+
+        pdf_bytes = await convert_html_to_pdf(html_rendered)
         out_filename = f"Laudo_{ref_clean}.pdf"
 
         return Response(
@@ -176,10 +188,19 @@ async def gerar_laudo(
         # 2. Renderização do Template HTML com Jinja2
         html_rendered = render_html_laudo(laudo_json)
 
+        ref_clean = laudo_json.get("referencia", "#ANTK-2026").replace("#", "").replace("/", "-").strip()
+
+        # Upload automático para o Cloudflare R2
+        try:
+            upload_laudo_r2(html_rendered, ref_clean)
+            hash_foto = laudo_json.get("hash_foto")
+            if hash_foto and hash_foto != ref_clean:
+                upload_laudo_r2(html_rendered, hash_foto)
+        except Exception as r2_err:
+            print(f"[main] Aviso no upload R2 (/gerar-laudo): {r2_err}")
+
         # 3. Conversão de HTML em PDF A4
         pdf_bytes = await convert_html_to_pdf(html_rendered)
-
-        ref_clean = laudo_json.get("referencia", "#ANTK-2026").replace("#", "").replace("/", "-")
         filename = f"Laudo_{ref_clean}.pdf"
 
         return Response(
@@ -257,6 +278,17 @@ async def preview_laudo(
         image_url=target_url
     )
     html_rendered = render_html_laudo(data)
+    
+    # Upload automático para o Cloudflare R2
+    try:
+        ref_clean = data.get("referencia", "#ANTK-2026").replace("#", "").replace("/", "-").strip()
+        upload_laudo_r2(html_rendered, ref_clean)
+        hash_foto = data.get("hash_foto")
+        if hash_foto and hash_foto != ref_clean:
+            upload_laudo_r2(html_rendered, hash_foto)
+    except Exception as r2_err:
+        print(f"[main] Aviso no upload R2 (/preview-laudo): {r2_err}")
+
     return HTMLResponse(content=html_rendered)
 
 
@@ -304,6 +336,99 @@ async def home_interface(request: Request):
         name="index.html",
         context={"user": user_info}
     )
+
+
+# ==============================================================================
+# CONSULTA E VALIDAÇÃO DE LAUDOS (CLOUDFLARE R2)
+# ==============================================================================
+
+@app.get("/validar", response_class=HTMLResponse, tags=["Validação"])
+@app.get("/validar/", response_class=HTMLResponse, tags=["Validação"])
+async def validar_laudo(request: Request, codigo: Optional[str] = Query(None)):
+    """
+    Rota pública de consulta e validação pericial de laudos Casa Antik no Cloudflare R2.
+    - Sem parâmetros: exibe formulário limpo para busca.
+    - Com ?codigo=...: higieniza código, verifica existência no R2 e exibe tela de autenticidade ou aviso de não encontrado.
+    """
+    if not codigo or not codigo.strip():
+        return templates.TemplateResponse(
+            request=request,
+            name="validar.html",
+            context={"modo": "busca", "codigo": None, "codigo_digitado": ""}
+        )
+
+    codigo_digitado = codigo.strip()
+
+    # 1. Higienização: remove '#' e espaços
+    c1 = codigo_digitado.lstrip('#').strip()
+
+    # 2. Se o usuário colar '#ANTK-...' ou 'ANTK-...', extrai o sufixo limpo
+    c2 = re.sub(r'^(ANTK-2026-|ANTK-)', '', c1, flags=re.IGNORECASE).strip()
+
+    # Monta variantes potenciais para localização do arquivo
+    candidatos = []
+    for cand in [c1, c2, f"ANTK-2026-{c2}", f"ANTK-{c2}"]:
+        if cand and cand not in candidatos:
+            candidatos.append(cand)
+
+    codigo_valido = None
+    for cand in candidatos:
+        if verificar_laudo_existe(cand):
+            codigo_valido = cand
+            break
+
+    if codigo_valido:
+        r2_public_url = (os.getenv("R2_PUBLIC_URL") or "").rstrip("/")
+        r2_url = f"{r2_public_url}/laudos/{codigo_valido}.html"
+        return templates.TemplateResponse(
+            request=request,
+            name="validar.html",
+            context={
+                "modo": "sucesso",
+                "codigo": codigo_valido,
+                "codigo_digitado": codigo_digitado,
+                "r2_url": r2_url
+            }
+        )
+    else:
+        return templates.TemplateResponse(
+            request=request,
+            name="validar.html",
+            context={
+                "modo": "nao_encontrado",
+                "codigo": None,
+                "codigo_digitado": codigo_digitado
+            }
+        )
+
+
+@app.get("/validar/download", tags=["Validação"])
+async def download_laudo_html(codigo: str = Query(...)):
+    """
+    Endpoint para download do arquivo HTML oficial do laudo armazenado no Cloudflare R2.
+    """
+    codigo_digitado = codigo.strip()
+    c1 = codigo_digitado.lstrip('#').strip()
+    c2 = re.sub(r'^(ANTK-2026-|ANTK-)', '', c1, flags=re.IGNORECASE).strip()
+
+    candidatos = []
+    for cand in [c1, c2, f"ANTK-2026-{c2}", f"ANTK-{c2}"]:
+        if cand and cand not in candidatos:
+            candidatos.append(cand)
+
+    for cand in candidatos:
+        conteudo = obter_laudo_r2(cand)
+        if conteudo:
+            filename = f"Laudo_{cand}.html"
+            return Response(
+                content=conteudo,
+                media_type="text/html; charset=utf-8",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"'
+                }
+            )
+
+    raise HTTPException(status_code=404, detail="Laudo não encontrado para download no acervo oficial.")
 
 
 # ==============================================================================

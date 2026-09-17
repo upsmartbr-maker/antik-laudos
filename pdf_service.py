@@ -16,9 +16,11 @@ def get_logo_base64() -> str:
             return otimizar_imagem_base64(f.read(), max_dim=250, quality=88)
     return ""
 
-def gerar_qrcode_laudo(hash_foto: str) -> str:
-    """Gera um QR Code em Data URI base64 direcionando para a URL de validação do laudo."""
-    target_url = f"https://www.antik.com.br/laudo/{hash_foto}"
+def gerar_qrcode_laudo(codigo_ref: str) -> str:
+    """Gera um QR Code em Data URI base64 direcionando para o link oficial de validação do laudo."""
+    base_url = (os.getenv("BASE_URL") or "https://www.antik.com.br").rstrip("/")
+    codigo_limpo = codigo_ref.strip().lstrip("#").replace("/", "-")
+    target_url = f"{base_url}/validar?codigo={codigo_limpo}"
     try:
         qr = qrcode.QRCode(
             version=1,
@@ -47,15 +49,20 @@ def render_html_laudo(data: Dict[str, Any]) -> str:
     logo_b64 = data.get("logo_base64") or get_logo_base64()
     
     ref = data.get("referencia", "#ANTK-2026-0000")
+    codigo_ref = ref.replace("#", "").replace("/", "-").strip()
     hash_foto = data.get("hash_foto")
     if not hash_foto:
         hash_foto = ref.replace("#ANTK-2026-", "").replace("#", "") or "ANTK2026"
         
-    qrcode_b64 = data.get("qrcode_base64") or gerar_qrcode_laudo(hash_foto)
+    base_url = (os.getenv("BASE_URL") or "https://www.antik.com.br").rstrip("/")
+    validacao_url = f"{base_url}/validar?codigo={codigo_ref}"
+    qrcode_b64 = data.get("qrcode_base64") or gerar_qrcode_laudo(codigo_ref)
 
     html_content = template.render(
         referencia=ref,
+        codigo_ref=codigo_ref,
         hash_foto=hash_foto,
+        validacao_url=validacao_url,
         qrcode_base64=qrcode_b64,
         data=data.get("data", ""),
         identificacao=data.get("identificacao", ""),
